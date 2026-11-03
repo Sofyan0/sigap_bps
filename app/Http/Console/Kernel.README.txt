@@ -1,0 +1,1 @@
+Laravel 11/12 uses routes/console.php for scheduled tasks and auto-discovers commands under app/Console/Commands. This package includes routes/console.php and app/Console/Commands/SyncCentralPrices.php. If your project has customized console bootstrapping, confirm routes/console.php is loaded by the application.
