@@ -10,6 +10,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             SigapDemoSeeder::class,
+            MarketSeeder::class,
+            DashboardSettingsSeeder::class,
         ]);
     }
 }

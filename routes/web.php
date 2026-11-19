@@ -2,10 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardSettingsController;
 use App\Http\Controllers\KelolaDataController;
+use App\Http\Controllers\MonitoringHargaImportController;
 
 // Route Dashboard Utama
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::post('/monitoring-harga/upload', [MonitoringHargaImportController::class, 'store'])->name('monitoring-harga.upload');
+Route::post('/pengaturan', [DashboardSettingsController::class, 'update'])->name('dashboard.settings.update');
 
 // Route Khusus Halaman Kelola Data
 Route::get('/kelola-data', [KelolaDataController::class, 'index'])->name('kelola-data');

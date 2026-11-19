@@ -1,0 +1,660 @@
+excel_id,nama_pasar,nama_barang,harga,tanggal_dibuat
+362090,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-01
+362091,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-01
+362092,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-01
+362093,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-01
+362094,Pasar Rakyat Panji,Beras Premium,14900,2026-11-01
+362095,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-01
+362096,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-01
+362097,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-01
+362098,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-01
+362099,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-01
+362100,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-01
+362101,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-01
+362102,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-01
+362103,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-01
+362104,Pasar Rakyat Panji,Telur Ayam Kampung,26000,2026-11-01
+362105,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-01
+362106,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-01
+362107,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-01
+362108,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-01
+362109,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-01
+362110,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-01
+362111,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-01
+362112,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-01
+362113,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-01
+362114,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-01
+362115,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-01
+362116,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-01
+362117,Pasar Rakyat Panji,Cabe Rawit Merah,40000,2026-11-01
+362118,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-01
+362119,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,26000,2026-11-01
+362120,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-01
+362121,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-01
+362122,Pasar Rakyat Panji,Kacang Tanah,24000,2026-11-01
+362123,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-01
+362124,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-01
+362125,Pasar Rakyat Panji,Kentang,16000,2026-11-01
+362126,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-01
+362127,Pasar Rakyat Panji,Wortel,16000,2026-11-01
+362128,Pasar Rakyat Panji,Buncis,24000,2026-11-01
+362129,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-01
+362130,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-01
+362394,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-02
+362395,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-02
+362396,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-02
+362397,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-02
+362398,Pasar Rakyat Panji,Beras Premium,14900,2026-11-02
+362399,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-02
+362400,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-02
+362401,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-02
+362402,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-02
+362403,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-02
+362404,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-02
+362405,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-02
+362406,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-02
+362407,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-02
+362408,Pasar Rakyat Panji,Telur Ayam Kampung,26000,2026-11-02
+362409,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-02
+362410,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-02
+362411,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-02
+362412,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-02
+362413,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-02
+362414,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-02
+362415,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-02
+362416,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-02
+362417,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-02
+362418,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-02
+362419,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-02
+362420,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-02
+362421,Pasar Rakyat Panji,Cabe Rawit Merah,43000,2026-11-02
+362422,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-02
+362423,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,26000,2026-11-02
+362424,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-02
+362425,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-02
+362426,Pasar Rakyat Panji,Kacang Tanah,24000,2026-11-02
+362427,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-02
+362428,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-02
+362429,Pasar Rakyat Panji,Kentang,16000,2026-11-02
+362430,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-02
+362431,Pasar Rakyat Panji,Wortel,16000,2026-11-02
+362432,Pasar Rakyat Panji,Buncis,24000,2026-11-02
+362433,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-02
+362434,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-02
+362748,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-03
+362749,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-03
+362750,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-03
+362751,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-03
+362752,Pasar Rakyat Panji,Beras Premium,14900,2026-11-03
+362753,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-03
+362754,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-03
+362755,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-03
+362756,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-03
+362757,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-03
+362758,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-03
+362759,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-03
+362760,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-03
+362761,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-03
+362762,Pasar Rakyat Panji,Telur Ayam Kampung,26000,2026-11-03
+362763,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-03
+362764,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-03
+362765,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-03
+362766,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-03
+362767,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-03
+362768,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-03
+362769,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-03
+362770,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-03
+362771,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-03
+362772,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-03
+362773,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-03
+362774,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-03
+362775,Pasar Rakyat Panji,Cabe Rawit Merah,43000,2026-11-03
+362776,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-03
+362777,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,26000,2026-11-03
+362778,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-03
+362779,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-03
+362780,Pasar Rakyat Panji,Kacang Tanah,24000,2026-11-03
+362781,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-03
+362782,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-03
+362783,Pasar Rakyat Panji,Kentang,16000,2026-11-03
+362784,Pasar Rakyat Panji,Tomat Merah,9009,2026-11-03
+362785,Pasar Rakyat Panji,Wortel,16000,2026-11-03
+362786,Pasar Rakyat Panji,Buncis,24000,2026-11-03
+362787,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-03
+362788,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-03
+363138,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-04
+363139,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-04
+363140,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-04
+363141,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-04
+363142,Pasar Rakyat Panji,Beras Premium,14900,2026-11-04
+363143,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-04
+363144,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-04
+363145,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-04
+363146,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-04
+363147,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-04
+363148,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-04
+363149,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-04
+363150,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-04
+363151,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-04
+363152,Pasar Rakyat Panji,Telur Ayam Kampung,26000,2026-11-04
+363153,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-04
+363154,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-04
+363155,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-04
+363156,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-04
+363157,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-04
+363158,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-04
+363159,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-04
+363160,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-04
+363161,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-04
+363162,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-04
+363163,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-04
+363164,Pasar Rakyat Panji,Cabe Merah Besar,29000,2026-11-04
+363165,Pasar Rakyat Panji,Cabe Rawit Merah,45000,2026-11-04
+363166,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-04
+363167,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,26000,2026-11-04
+363168,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-04
+363169,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-04
+363170,Pasar Rakyat Panji,Kacang Tanah,24000,2026-11-04
+363171,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-04
+363172,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-04
+363173,Pasar Rakyat Panji,Kentang,16000,2026-11-04
+363174,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-04
+363175,Pasar Rakyat Panji,Wortel,16000,2026-11-04
+363176,Pasar Rakyat Panji,Buncis,24000,2026-11-04
+363177,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-04
+363178,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-04
+363528,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-05
+363529,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-05
+363530,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-05
+363531,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-05
+363532,Pasar Rakyat Panji,Beras Premium,14900,2026-11-05
+363533,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-05
+363534,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-05
+363535,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-05
+363536,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-05
+363537,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-05
+363538,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-05
+363539,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-05
+363540,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-05
+363541,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-05
+363542,Pasar Rakyat Panji,Telur Ayam Kampung,26000,2026-11-05
+363543,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-05
+363544,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-05
+363545,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-05
+363546,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-05
+363547,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-05
+363548,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-05
+363549,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-05
+363550,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-05
+363551,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-05
+363552,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-05
+363553,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-05
+363554,Pasar Rakyat Panji,Cabe Merah Besar,29000,2026-11-05
+363555,Pasar Rakyat Panji,Cabe Rawit Merah,45000,2026-11-05
+363556,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-05
+363557,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,26000,2026-11-05
+363558,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-05
+363559,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-05
+363560,Pasar Rakyat Panji,Kacang Tanah,24000,2026-11-05
+363561,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-05
+363562,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-05
+363563,Pasar Rakyat Panji,Kentang,16000,2026-11-05
+363564,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-05
+363565,Pasar Rakyat Panji,Wortel,16000,2026-11-05
+363566,Pasar Rakyat Panji,Buncis,24000,2026-11-05
+363567,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-05
+363568,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-05
+363816,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-06
+363817,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-06
+363818,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-06
+363819,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-06
+363820,Pasar Rakyat Panji,Beras Premium,14900,2026-11-06
+363821,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-06
+363822,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-06
+363823,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-06
+363824,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-06
+363825,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-06
+363826,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-06
+363827,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-06
+363828,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-06
+363829,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-06
+363830,Pasar Rakyat Panji,Telur Ayam Kampung,46000,2026-11-06
+363831,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-06
+363832,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-06
+363833,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-06
+363834,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-06
+363835,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-06
+363836,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-06
+363837,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-06
+363838,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-06
+363839,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-06
+363840,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-06
+363841,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-06
+363842,Pasar Rakyat Panji,Cabe Merah Besar,29000,2026-11-06
+363843,Pasar Rakyat Panji,Cabe Rawit Merah,45000,2026-11-06
+363844,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-06
+363845,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,26000,2026-11-06
+363846,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-06
+363847,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-06
+363848,Pasar Rakyat Panji,Kacang Tanah,26000,2026-11-06
+363849,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-06
+363850,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-06
+363851,Pasar Rakyat Panji,Kentang,16000,2026-11-06
+363852,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-06
+363853,Pasar Rakyat Panji,Wortel,16000,2026-11-06
+363854,Pasar Rakyat Panji,Buncis,24000,2026-11-06
+363855,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-06
+363856,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-06
+364227,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-07
+364228,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-07
+364229,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-07
+364230,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-07
+364231,Pasar Rakyat Panji,Beras Premium,14900,2026-11-07
+364232,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-07
+364233,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-07
+364234,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-07
+364235,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-07
+364236,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-07
+364237,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-07
+364238,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-07
+364239,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-07
+364240,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-07
+364241,Pasar Rakyat Panji,Telur Ayam Kampung,46000,2026-11-07
+364242,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-07
+364243,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-07
+364244,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-07
+364245,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-07
+364246,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-07
+364247,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-07
+364248,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-07
+364249,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-07
+364250,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-07
+364251,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-07
+364252,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-07
+364253,Pasar Rakyat Panji,Cabe Merah Besar,28000,2026-11-07
+364254,Pasar Rakyat Panji,Cabe Rawit Merah,57000,2026-11-07
+364255,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-07
+364256,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,26000,2026-11-07
+364257,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-07
+364258,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-07
+364259,Pasar Rakyat Panji,Kacang Tanah,26000,2026-11-07
+364260,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-07
+364261,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-07
+364262,Pasar Rakyat Panji,Kentang,16000,2026-11-07
+364263,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-07
+364264,Pasar Rakyat Panji,Wortel,16000,2026-11-07
+364265,Pasar Rakyat Panji,Buncis,24000,2026-11-07
+364266,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-07
+364267,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-07
+364518,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-08
+364519,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-08
+364520,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-08
+364521,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-08
+364522,Pasar Rakyat Panji,Beras Premium,14900,2026-11-08
+364523,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-08
+364524,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-08
+364525,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-08
+364526,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-08
+364527,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-08
+364528,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-08
+364529,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-08
+364530,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-08
+364531,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-08
+364532,Pasar Rakyat Panji,Telur Ayam Kampung,46000,2026-11-08
+364533,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-08
+364534,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-08
+364535,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-08
+364536,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-08
+364537,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-08
+364538,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-08
+364539,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-08
+364540,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-08
+364541,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-08
+364542,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-08
+364543,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-08
+364544,Pasar Rakyat Panji,Cabe Merah Besar,28000,2026-11-08
+364545,Pasar Rakyat Panji,Cabe Rawit Merah,57000,2026-11-08
+364546,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-08
+364547,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,26000,2026-11-08
+364548,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-08
+364549,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-08
+364550,Pasar Rakyat Panji,Kacang Tanah,26000,2026-11-08
+364551,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-08
+364552,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-08
+364553,Pasar Rakyat Panji,Kentang,16000,2026-11-08
+364554,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-08
+364555,Pasar Rakyat Panji,Wortel,16000,2026-11-08
+364556,Pasar Rakyat Panji,Buncis,24000,2026-11-08
+364557,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-08
+364558,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-08
+364917,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-09
+364918,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-09
+364919,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-09
+364920,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-09
+364921,Pasar Rakyat Panji,Beras Premium,14900,2026-11-09
+364922,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-09
+364923,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-09
+364924,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-09
+364925,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-09
+364926,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-09
+364927,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-09
+364928,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-09
+364929,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-09
+364930,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-09
+364931,Pasar Rakyat Panji,Telur Ayam Kampung,46000,2026-11-09
+364932,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-09
+364933,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-09
+364934,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-09
+364935,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-09
+364936,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-09
+364937,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-09
+364938,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-09
+364939,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-09
+364940,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-09
+364941,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-09
+364942,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-09
+364943,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-09
+364944,Pasar Rakyat Panji,Cabe Rawit Merah,50000,2026-11-09
+364945,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-09
+364946,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,25000,2026-11-09
+364947,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-09
+364948,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-09
+364949,Pasar Rakyat Panji,Kacang Tanah,26000,2026-11-09
+364950,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-09
+364951,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-09
+364952,Pasar Rakyat Panji,Kentang,16000,2026-11-09
+364953,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-09
+364954,Pasar Rakyat Panji,Wortel,16000,2026-11-09
+364955,Pasar Rakyat Panji,Buncis,24000,2026-11-09
+364956,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-09
+364957,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-09
+365224,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-10
+365225,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-10
+365226,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-10
+365227,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-10
+365228,Pasar Rakyat Panji,Beras Premium,14900,2026-11-10
+365229,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-10
+365230,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-10
+365231,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-10
+365232,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-10
+365233,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-10
+365234,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-10
+365235,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-10
+365236,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-10
+365237,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-10
+365238,Pasar Rakyat Panji,Telur Ayam Kampung,46000,2026-11-10
+365239,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-10
+365240,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-10
+365241,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-10
+365242,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-10
+365243,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-10
+365244,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-10
+365245,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-10
+365246,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-10
+365247,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-10
+365248,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-10
+365249,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-10
+365250,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-10
+365251,Pasar Rakyat Panji,Cabe Rawit Merah,50000,2026-11-10
+365252,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-10
+365253,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,25000,2026-11-10
+365254,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-10
+365255,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-10
+365256,Pasar Rakyat Panji,Kacang Tanah,26000,2026-11-10
+365257,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-10
+365258,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-10
+365259,Pasar Rakyat Panji,Kentang,16000,2026-11-10
+365260,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-10
+365261,Pasar Rakyat Panji,Wortel,16000,2026-11-10
+365262,Pasar Rakyat Panji,Buncis,24000,2026-11-10
+365263,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-10
+365264,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-10
+365533,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-11
+365534,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-11
+365535,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-11
+365536,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-11
+365537,Pasar Rakyat Panji,Beras Premium,14900,2026-11-11
+365538,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-11
+365539,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-11
+365540,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-11
+365541,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-11
+365542,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-11
+365543,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-11
+365544,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-11
+365545,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-11
+365546,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-11
+365547,Pasar Rakyat Panji,Telur Ayam Kampung,46000,2026-11-11
+365548,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-11
+365549,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-11
+365550,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-11
+365551,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-11
+365552,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-11
+365553,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-11
+365554,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-11
+365555,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-11
+365556,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-11
+365557,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-11
+365558,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-11
+365559,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-11
+365560,Pasar Rakyat Panji,Cabe Rawit Merah,52000,2026-11-11
+365561,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-11
+365562,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,25000,2026-11-11
+365563,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-11
+365564,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-11
+365565,Pasar Rakyat Panji,Kacang Tanah,26000,2026-11-11
+365566,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-11
+365567,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-11
+365568,Pasar Rakyat Panji,Kentang,16000,2026-11-11
+365569,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-11
+365570,Pasar Rakyat Panji,Wortel,16000,2026-11-11
+365571,Pasar Rakyat Panji,Buncis,24000,2026-11-11
+365572,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-11
+365573,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-11
+366085,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-12
+366086,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-12
+366087,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-12
+366088,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-12
+366089,Pasar Rakyat Panji,Beras Premium,14900,2026-11-12
+366090,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-12
+366091,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-12
+366092,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-12
+366093,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-12
+366094,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-12
+366095,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-12
+366096,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-12
+366097,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-12
+366098,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-12
+366099,Pasar Rakyat Panji,Telur Ayam Kampung,46000,2026-11-12
+366100,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-12
+366101,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-12
+366102,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-12
+366103,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-12
+366104,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-12
+366105,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-12
+366106,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-12
+366107,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-12
+366108,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-12
+366109,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-12
+366110,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-12
+366111,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-12
+366112,Pasar Rakyat Panji,Cabe Rawit Merah,50000,2026-11-12
+366113,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-12
+366114,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,25000,2026-11-12
+366115,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-12
+366116,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-12
+366117,Pasar Rakyat Panji,Kacang Tanah,26000,2026-11-12
+366118,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-12
+366119,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-12
+366120,Pasar Rakyat Panji,Kentang,16000,2026-11-12
+366121,Pasar Rakyat Panji,Tomat Merah,10000,2026-11-12
+366122,Pasar Rakyat Panji,Wortel,16000,2026-11-12
+366123,Pasar Rakyat Panji,Buncis,24000,2026-11-12
+366124,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-12
+366125,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-12
+366180,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-13
+366181,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-13
+366182,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-13
+366183,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-13
+366184,Pasar Rakyat Panji,Beras Premium,14900,2026-11-13
+366185,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-13
+366186,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-13
+366187,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-13
+366188,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),42000,2026-11-13
+366189,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-13
+366190,Pasar Rakyat Panji,Daging Ayam Ras,31000,2026-11-13
+366191,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-13
+366192,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-13
+366193,Pasar Rakyat Panji,Telur Ayam Ras,23000,2026-11-13
+366194,Pasar Rakyat Panji,Telur Ayam Kampung,46000,2026-11-13
+366195,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,11500,2026-11-13
+366196,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,11500,2026-11-13
+366197,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-13
+366198,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-13
+366199,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-13
+366200,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-13
+366201,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-13
+366202,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-13
+366203,Pasar Rakyat Panji,Kedelai Lokal,11000,2026-11-13
+366204,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-13
+366205,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-13
+366206,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-13
+366207,Pasar Rakyat Panji,Cabe Rawit Merah,50000,2026-11-13
+366208,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-13
+366209,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,25000,2026-11-13
+366210,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-13
+366211,Pasar Rakyat Panji,Kacang Hijau,22000,2026-11-13
+366212,Pasar Rakyat Panji,Kacang Tanah,26000,2026-11-13
+366213,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-13
+366214,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-13
+366215,Pasar Rakyat Panji,Kentang,16000,2026-11-13
+366216,Pasar Rakyat Panji,Tomat Merah,10000,2026-11-13
+366217,Pasar Rakyat Panji,Wortel,16000,2026-11-13
+366218,Pasar Rakyat Panji,Buncis,24000,2026-11-13
+366219,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-13
+366220,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-13
+366954,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-15
+366955,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-15
+366956,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-15
+366957,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-15
+366958,Pasar Rakyat Panji,Beras Premium,15000,2026-11-15
+366959,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-15
+366960,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-15
+366961,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Sania),22000,2026-11-15
+366962,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,16000,2026-11-15
+366963,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),22000,2026-11-15
+366964,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),120000,2026-11-15
+366965,Pasar Rakyat Panji,Daging Ayam Ras,30000,2026-11-15
+366966,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-15
+366967,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-15
+366968,Pasar Rakyat Panji,Telur Ayam Ras,20000,2026-11-15
+366969,Pasar Rakyat Panji,Telur Ayam Kampung,26000,2026-11-15
+366970,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,12000,2026-11-15
+366971,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,12000,2026-11-15
+366972,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-15
+366973,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-15
+366974,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-15
+366975,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-15
+366976,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-15
+366977,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-15
+366978,Pasar Rakyat Panji,Kedelai Lokal,10000,2026-11-15
+366979,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-15
+366980,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-15
+366981,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-15
+366982,Pasar Rakyat Panji,Cabe Rawit Merah,60000,2026-11-15
+366983,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-15
+366984,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,25000,2026-11-15
+366985,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-15
+366986,Pasar Rakyat Panji,Kacang Hijau,24000,2026-11-15
+366987,Pasar Rakyat Panji,Kacang Tanah,45000,2026-11-15
+366988,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-15
+366989,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-15
+366990,Pasar Rakyat Panji,Kentang,13000,2026-11-15
+366991,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-15
+366992,Pasar Rakyat Panji,Wortel,18000,2026-11-15
+366993,Pasar Rakyat Panji,Buncis,19000,2026-11-15
+366994,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-15
+366995,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-15
+367017,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-16
+367018,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-16
+367019,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-16
+367020,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-16
+367021,Pasar Rakyat Panji,Beras Premium,15000,2026-11-16
+367022,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-16
+367023,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-16
+367024,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Sania),22000,2026-11-16
+367025,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-16
+367026,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),22000,2026-11-16
+367027,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),120000,2026-11-16
+367028,Pasar Rakyat Panji,Daging Ayam Ras,30000,2026-11-16
+367029,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-16
+367030,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-16
+367031,Pasar Rakyat Panji,Telur Ayam Ras,20000,2026-11-16
+367032,Pasar Rakyat Panji,Telur Ayam Kampung,26000,2026-11-16
+367033,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,12000,2026-11-16
+367034,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,12000,2026-11-16
+367035,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-16
+367036,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-16
+367037,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-16
+367038,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-16
+367039,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-16
+367040,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-16
+367041,Pasar Rakyat Panji,Kedelai Lokal,10000,2026-11-16
+367042,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-16
+367043,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-16
+367044,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-16
+367045,Pasar Rakyat Panji,Cabe Rawit Merah,57000,2026-11-16
+367046,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-16
+367047,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,25000,2026-11-16
+367048,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-16
+367049,Pasar Rakyat Panji,Kacang Hijau,24000,2026-11-16
+367050,Pasar Rakyat Panji,Kacang Tanah,45000,2026-11-16
+367051,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-16
+367052,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-16
+367053,Pasar Rakyat Panji,Kentang,13000,2026-11-16
+367054,Pasar Rakyat Panji,Tomat Merah,9000,2026-11-16
+367055,Pasar Rakyat Panji,Wortel,18000,2026-11-16
+367056,Pasar Rakyat Panji,Buncis,19000,2026-11-16
+367057,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-16
+367058,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-16
+367379,Pasar Rakyat Panji,Beras Premium (TH 55),16500,2026-11-17
+367380,Pasar Rakyat Panji,Beras Medium (Non Bulog),13500,2026-11-17
+367381,Pasar Rakyat Panji,Beras Medium (Bulog),12000,2026-11-17
+367382,Pasar Rakyat Panji,Beras Premium (TH 88),16500,2026-11-17
+367383,Pasar Rakyat Panji,Beras Premium,14900,2026-11-17
+367384,Pasar Rakyat Panji,Gula Kristal Putih,17500,2026-11-17
+367385,Pasar Rakyat Panji,Minyak Goreng Curah,20000,2026-11-17
+367386,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Sania),22000,2026-11-17
+367387,Pasar Rakyat Panji,Minyak Goreng MINYAKITA,15500,2026-11-17
+367388,Pasar Rakyat Panji,Minyak Goreng Kemasan Premium (Bimoli),22000,2026-11-17
+367389,Pasar Rakyat Panji,Daging Sapi Paha Belakang (Super),140000,2026-11-17
+367390,Pasar Rakyat Panji,Daging Ayam Ras,30000,2026-11-17
+367391,Pasar Rakyat Panji,Daging Ayam Kampung,75000,2026-11-17
+367392,Pasar Rakyat Panji,Daging Sapi,100000,2026-11-17
+367393,Pasar Rakyat Panji,Telur Ayam Ras,20000,2026-11-17
+367394,Pasar Rakyat Panji,Telur Ayam Kampung,46000,2026-11-17
+367395,Pasar Rakyat Panji,Susu Kental Manis Merk Bendera,12000,2026-11-17
+367396,Pasar Rakyat Panji,Susu Kental Manis Merk Indomilk,12000,2026-11-17
+367397,Pasar Rakyat Panji,Jagung Pipilan Kering,8000,2026-11-17
+367398,Pasar Rakyat Panji,Garam Beryodium (Bata),5000,2026-11-17
+367399,Pasar Rakyat Panji,Garam Beryodium (Halus),2500,2026-11-17
+367400,Pasar Rakyat Panji,Garam Beryodium (Halus 250gr),2500,2026-11-17
+367401,Pasar Rakyat Panji,Terigu Protein Sedang (Segitiga Biru),12000,2026-11-17
+367402,Pasar Rakyat Panji,Kedelai Impor,11000,2026-11-17
+367403,Pasar Rakyat Panji,Kedelai Lokal,10000,2026-11-17
+367404,Pasar Rakyat Panji,Indomie Rasa Kari Ayam,3000,2026-11-17
+367405,Pasar Rakyat Panji,Indomie Goreng,3000,2026-11-17
+367406,Pasar Rakyat Panji,Cabe Merah Besar,30000,2026-11-17
+367407,Pasar Rakyat Panji,Cabe Rawit Merah,56000,2026-11-17
+367408,Pasar Rakyat Panji,Bawang Merah (Super),28000,2026-11-17
+367409,Pasar Rakyat Panji,Bawang Putih Sinco/Honan,25000,2026-11-17
+367410,Pasar Rakyat Panji,Ikan Asin Teri,120000,2026-11-17
+367411,Pasar Rakyat Panji,Kacang Hijau,24000,2026-11-17
+367412,Pasar Rakyat Panji,Kacang Tanah,45000,2026-11-17
+367413,Pasar Rakyat Panji,Ketela Pohon,3500,2026-11-17
+367414,Pasar Rakyat Panji,Kol/Kubis,10000,2026-11-17
+367415,Pasar Rakyat Panji,Kentang,13000,2026-11-17
+367416,Pasar Rakyat Panji,Tomat Merah,10000,2026-11-17
+367417,Pasar Rakyat Panji,Wortel,17000,2026-11-17
+367418,Pasar Rakyat Panji,Buncis,24000,2026-11-17
+367419,Pasar Rakyat Panji,Ikan Tongkol,35000,2026-11-17
+367420,Pasar Rakyat Panji,Ikan Cakalang,35000,2026-11-17

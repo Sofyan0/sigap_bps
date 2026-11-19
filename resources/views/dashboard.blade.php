@@ -42,41 +42,237 @@
         $currentTab = $activeTab ?? request()->query('tab', 'beranda');
         $curRegion = $selectedRegion ?? request()->query('region', 'Situbondo');
         $dataSource = request()->query('source', 'sikeppo'); // sikeppo atau sp2kp
+        $sourceDisplayName = $dataSource === 'sp2kp' ? 'SP2KP' : 'SIKEPO';
         
-        $startDate = request()->query('start_date', '2026-10-01');
-        $endDate = request()->query('end_date', '2026-10-27');
+        $today = \Carbon\Carbon::today();
+        $startDate = $currentTab === 'sekarkijang'
+            ? ($sekarkijangComparisonStartDate ?? $dashboardStartDate ?? request()->query('start_date', $today->copy()->startOfMonth()->toDateString()))
+            : ($dashboardStartDate ?? request()->query('start_date', $today->copy()->startOfMonth()->toDateString()));
+        $endDate = $currentTab === 'sekarkijang'
+            ? ($sekarkijangComparisonEndDate ?? $dashboardEndDate ?? request()->query('end_date', $today->toDateString()))
+            : ($dashboardEndDate ?? request()->query('end_date', $today->toDateString()));
         $selectedCommodity = request()->query('commodity', 'all');
+        $usingSp2kpMonitoringData = $currentTab === 'monitoring_harga' && $dataSource === 'sp2kp';
+        $usingSikepoMonitoringData = $currentTab === 'monitoring_harga' && $dataSource === 'sikeppo';
+        $usingSpreadsheetMonitoringData = $usingSp2kpMonitoringData || $usingSikepoMonitoringData;
+        $sp2kpCommodityData = [];
+        $sp2kpChartData = collect();
+        $sp2kpCommodityOptions = collect();
+        $sikepoCommodityData = [];
+        $sikepoChartData = collect();
+        $sikepoCommodityOptions = collect();
+        $uploadedMonitoringRows = collect();
+        $monitoringPricesTable = $dataSource === 'sp2kp'
+            ? 'monitoring_sp2kp_prices'
+            : 'monitoring_sikepo_prices';
+        if ($usingSpreadsheetMonitoringData
+            && \Illuminate\Support\Facades\Schema::hasTable($monitoringPricesTable)) {
+            $uploadedMonitoringRows = \Illuminate\Support\Facades\DB::table($monitoringPricesTable)
+                ->orderBy('price_date')
+                ->get();
+        }
+
+        if ($usingSp2kpMonitoringData) {
+            if ($uploadedMonitoringRows->isNotEmpty()) {
+                foreach ($uploadedMonitoringRows as $record) {
+                    $commodityName = $record->commodity_name;
+                    $priceDate = $record->price_date;
+                    $price = (float) $record->price;
+                    $sp2kpCommodityData[$commodityName] = [
+                        'unit' => $record->unit,
+                        'prices' => $sp2kpCommodityData[$commodityName]['prices'] ?? [],
+                    ];
+                    $sp2kpCommodityData[$commodityName]['prices'][$priceDate] = $price;
+                    if ($priceDate >= $startDate
+                        && $priceDate <= $endDate
+                        && ($selectedCommodity === 'all' || $selectedCommodity === $commodityName)) {
+                        $sp2kpChartData->push((object) [
+                            'nama_barang' => $commodityName,
+                            'tanggal_dibuat' => $priceDate,
+                            'harga' => $price,
+                        ]);
+                    }
+                }
+            } else {
+                $sp2kpCsv = fopen(database_path('data/sp2kp-situbondo-2026-11.csv'), 'r');
+                if ($sp2kpCsv === false) {
+                    throw new \RuntimeException('Data harga SP2KP Situbondo tidak dapat dibaca.');
+                }
+
+                $sp2kpHeader = fgetcsv($sp2kpCsv, 0, ',', '"', '');
+                if (! is_array($sp2kpHeader) || count($sp2kpHeader) < 3) {
+                    fclose($sp2kpCsv);
+                    throw new \RuntimeException('Format data harga SP2KP Situbondo tidak valid.');
+                }
+
+                $sp2kpDates = array_slice($sp2kpHeader, 2);
+                while (($sp2kpRow = fgetcsv($sp2kpCsv, 0, ',', '"', '')) !== false) {
+                    $commodityName = trim($sp2kpRow[0] ?? '');
+                    if ($commodityName === '') {
+                        continue;
+                    }
+
+                    $prices = [];
+                    foreach ($sp2kpDates as $dateIndex => $priceDate) {
+                        $price = $sp2kpRow[$dateIndex + 2] ?? null;
+                        if ($price === null || ! is_numeric($price) || (float) $price <= 0) {
+                            continue;
+                        }
+
+                        $prices[$priceDate] = (float) $price;
+                        if ($priceDate >= $startDate
+                            && $priceDate <= $endDate
+                            && ($selectedCommodity === 'all' || $selectedCommodity === $commodityName)) {
+                            $sp2kpChartData->push((object) [
+                                'nama_barang' => $commodityName,
+                                'tanggal_dibuat' => $priceDate,
+                                'harga' => (float) $price,
+                            ]);
+                        }
+                    }
+
+                    $sp2kpCommodityData[$commodityName] = [
+                        'unit' => trim($sp2kpRow[1] ?? ''),
+                        'prices' => $prices,
+                    ];
+                }
+                fclose($sp2kpCsv);
+            }
+            $sp2kpCommodityOptions = collect(array_keys($sp2kpCommodityData))
+                ->sort()
+                ->values();
+        }
+
+        if ($usingSikepoMonitoringData) {
+            if ($uploadedMonitoringRows->isNotEmpty()) {
+                foreach ($uploadedMonitoringRows as $record) {
+                    $commodityName = $record->commodity_name;
+                    $priceDate = $record->price_date;
+                    $price = (float) $record->price;
+                    $sikepoCommodityData[$commodityName] = [
+                        'unit' => $record->unit,
+                        'prices' => $sikepoCommodityData[$commodityName]['prices'] ?? [],
+                    ];
+                    $sikepoCommodityData[$commodityName]['prices'][$priceDate] = $price;
+                    if ($priceDate >= $startDate
+                        && $priceDate <= $endDate
+                        && ($selectedCommodity === 'all' || $selectedCommodity === $commodityName)) {
+                        $sikepoChartData->push((object) [
+                            'nama_barang' => $commodityName,
+                            'tanggal_dibuat' => $priceDate,
+                            'harga' => $price,
+                        ]);
+                    }
+                }
+            } else {
+                $sikepoCsv = fopen(database_path('data/sikepo-situbondo-2026-11.csv'), 'r');
+                if ($sikepoCsv === false) {
+                    throw new \RuntimeException('Data harga SIKEPO Situbondo tidak dapat dibaca.');
+                }
+
+                $sikepoHeader = fgetcsv($sikepoCsv, 0, ',', '"', '');
+                if (! is_array($sikepoHeader) || count($sikepoHeader) < 5) {
+                    fclose($sikepoCsv);
+                    throw new \RuntimeException('Format data harga SIKEPO Situbondo tidak valid.');
+                }
+
+                while (($sikepoRow = fgetcsv($sikepoCsv, 0, ',', '"', '')) !== false) {
+                    $commodityName = trim($sikepoRow[2] ?? '');
+                    $priceDate = trim($sikepoRow[4] ?? '');
+                    $price = $sikepoRow[3] ?? null;
+                    if ($commodityName === '' || $priceDate === '' || ! is_numeric($price) || (float) $price <= 0) {
+                        continue;
+                    }
+
+                    $sikepoCommodityData[$commodityName]['prices'][$priceDate] = (float) $price;
+                    if ($priceDate >= $startDate
+                        && $priceDate <= $endDate
+                        && ($selectedCommodity === 'all' || $selectedCommodity === $commodityName)) {
+                        $sikepoChartData->push((object) [
+                            'nama_barang' => $commodityName,
+                            'tanggal_dibuat' => $priceDate,
+                            'harga' => (float) $price,
+                        ]);
+                    }
+                }
+                fclose($sikepoCsv);
+            }
+
+            foreach ($sikepoCommodityData as $commodityName => $commodity) {
+                $sikepoCommodityData[$commodityName]['unit'] = $commodity['unit'] ?? '';
+            }
+            $sikepoCommodityOptions = collect(array_keys($sikepoCommodityData))
+                ->sort()
+                ->values();
+        }
 
         // PENGELOLAAN RENTANG TANGGAL DINAMIS
         try {
             $periodStart = \Carbon\Carbon::parse($startDate);
             $periodEnd = \Carbon\Carbon::parse($endDate);
             if ($periodStart->gt($periodEnd)) {
-                $periodStart = \Carbon\Carbon::parse('2026-10-01');
-                $periodEnd = \Carbon\Carbon::parse('2026-10-27');
+                $periodStart = $today->copy()->startOfMonth();
+                $periodEnd = $today->copy();
             }
         } catch (\Exception $e) {
-            $periodStart = \Carbon\Carbon::parse('2026-10-01');
-            $periodEnd = \Carbon\Carbon::parse('2026-10-27');
+            $periodStart = $today->copy()->startOfMonth();
+            $periodEnd = $today->copy();
         }
 
         $displayDate = $periodEnd->translatedFormat('d F Y');
+        $selectedSekarkijangWeek = '';
+        if ($periodStart->format('Y-m') === $periodEnd->format('Y-m')) {
+            $startDay = (int) $periodStart->format('j');
+            $endDay = (int) $periodEnd->format('j');
+            $daysInSelectedMonth = (int) $periodStart->daysInMonth;
+            $weekNumber = (int) floor(($startDay - 1) / 7) + 1;
+            $weekStart = (($weekNumber - 1) * 7) + 1;
+            $weekEnd = min($weekNumber * 7, $daysInSelectedMonth);
+
+            if ($startDay === 1 && $endDay === $daysInSelectedMonth) {
+                $selectedSekarkijangWeek = 'all';
+            } elseif ($startDay === $weekStart && $endDay === $weekEnd) {
+                $selectedSekarkijangWeek = (string) $weekNumber;
+            }
+        }
 
         // QUERY DATABASE MYSQL UNTUK SIKEPO / SP2KP
         $query = \Illuminate\Support\Facades\DB::table('harga_pasar')
             ->where('nama_pasar', 'LIKE', '%Panji%')
-            ->whereBetween('tanggal_dibuat', [$startDate, $endDate]);
+            ->whereBetween('tanggal_dibuat', [$chartStartDate ?? $startDate, $chartEndDate ?? $endDate]);
 
         if ($selectedCommodity !== 'all') {
-            $query->where('nama_barang', 'LIKE', '%' . $selectedCommodity . '%');
+            $query->where('nama_barang', $selectedCommodity);
         }
 
-        $rawDbData = $query->orderBy('tanggal_dibuat', 'asc')->get();
+        $rawDbData = $usingSpreadsheetMonitoringData
+            ? ($usingSp2kpMonitoringData ? $sp2kpChartData : $sikepoChartData)
+            : (in_array($currentTab, ['beranda', 'monitoring_harga'], true)
+                ? $query->orderBy('tanggal_dibuat', 'asc')->get()
+                : collect());
+        $chartSeedPrices = collect();
+        if (in_array($currentTab, ['beranda', 'monitoring_harga'], true) && ! $usingSpreadsheetMonitoringData) {
+            $latestPriceDates = \Illuminate\Support\Facades\DB::table('harga_pasar')
+                ->select('nama_barang', \Illuminate\Support\Facades\DB::raw('MAX(tanggal_dibuat) as tanggal_dibuat'))
+                ->where('nama_pasar', 'LIKE', '%Panji%')
+                ->where('tanggal_dibuat', '<', $chartStartDate ?? $startDate);
 
-        // Label tanggal unik per hari
-        $dbChartLabels = $rawDbData->pluck('tanggal_dibuat')->unique()->map(function($d) {
-            return \Carbon\Carbon::parse($d)->translatedFormat('j M');
-        })->values()->toArray();
+            if ($selectedCommodity !== 'all') {
+                $latestPriceDates->where('nama_barang', $selectedCommodity);
+            }
+
+            $chartSeedPrices = \Illuminate\Support\Facades\DB::table('harga_pasar as prices')
+                ->joinSub($latestPriceDates->groupBy('nama_barang'), 'latest_prices', function ($join) {
+                    $join->on('prices.nama_barang', '=', 'latest_prices.nama_barang')
+                        ->on('prices.tanggal_dibuat', '=', 'latest_prices.tanggal_dibuat');
+                })
+                ->where('prices.nama_pasar', 'LIKE', '%Panji%')
+                ->select('prices.nama_barang', 'prices.tanggal_dibuat', \Illuminate\Support\Facades\DB::raw('AVG(prices.harga) as harga'))
+                ->groupBy('prices.nama_barang', 'prices.tanggal_dibuat')
+                ->get();
+
+            $rawDbData = $chartSeedPrices->concat($rawDbData);
+        }
 
         // Dataset grafik per komoditas dari database
         $groupedCommodities = $rawDbData->groupBy('nama_barang');
@@ -84,17 +280,49 @@
         $colorIdx = 0;
 
         $dbChartDatasets = [];
-        $uniqueDates = $rawDbData->pluck('tanggal_dibuat')->unique()->values();
+        $seedPriceByCommodity = $chartSeedPrices->pluck('harga', 'nama_barang');
+        $actualDates = $rawDbData->pluck('tanggal_dibuat')->unique();
+        $inRangeDates = $actualDates->filter(function ($date) use ($chartStartDate, $startDate) {
+            return $date >= ($chartStartDate ?? $startDate);
+        });
+        $timelineStart = $inRangeDates->isNotEmpty()
+            ? \Carbon\Carbon::parse($inRangeDates->min())->min(\Carbon\Carbon::parse($startDate))
+            : \Carbon\Carbon::parse($chartStartDate ?? $startDate);
+        $timelineEnd = $actualDates->isNotEmpty()
+            ? \Carbon\Carbon::parse($actualDates->max())->max(\Carbon\Carbon::parse($endDate))
+            : \Carbon\Carbon::parse($endDate);
+        $chartDates = $usingSpreadsheetMonitoringData
+            ? $inRangeDates->unique()->sort()->values()
+            : collect(\Carbon\CarbonPeriod::create($timelineStart, $timelineEnd))
+                ->map(function ($date) {
+                    return $date->toDateString();
+                });
+        $dbChartLabels = $chartDates->map(function ($date) {
+            return \Carbon\Carbon::parse($date)->translatedFormat('j M');
+        })->values()->toArray();
 
         foreach ($groupedCommodities as $bName => $records) {
             $priceMap = $records->pluck('harga', 'tanggal_dibuat')->toArray();
             $dataPoints = [];
-            
-            foreach ($uniqueDates as $dt) {
+            $lastKnownPrice = isset($seedPriceByCommodity[$bName])
+                ? (float) $seedPriceByCommodity[$bName]
+                : null;
+            if ($lastKnownPrice !== null && $dataSource === 'sp2kp' && ! $usingSpreadsheetMonitoringData) {
+                $lastKnownPrice = round($lastKnownPrice * 1.02);
+            }
+
+            foreach ($chartDates as $dt) {
                 $val = isset($priceMap[$dt]) ? (float)$priceMap[$dt] : null;
-                if ($dataSource === 'sp2kp' && $val !== null) {
+                if ($dataSource === 'sp2kp' && $val !== null && ! $usingSpreadsheetMonitoringData) {
                     $val = round($val * 1.02);
                 }
+
+                if ($val !== null) {
+                    $lastKnownPrice = $val;
+                } elseif (! $usingSpreadsheetMonitoringData) {
+                    $val = $lastKnownPrice;
+                }
+
                 $dataPoints[] = $val;
             }
 
@@ -111,97 +339,108 @@
             ];
         }
 
-        // Master 7 Wilayah Sekarkijang
-        $regionsList = [
-            'Situbondo'       => ['name' => 'Situbondo', 'iph' => 1.18, 'status' => 'Waspada', 'price' => 60000],
-            'Jember'          => ['name' => 'Jember', 'iph' => 0.85, 'status' => 'Waspada', 'price' => 65000],
-            'Banyuwangi'      => ['name' => 'Banyuwangi', 'iph' => -0.32, 'status' => 'Aman', 'price' => 58000],
-            'Bondowoso'       => ['name' => 'Bondowoso', 'iph' => 0.45, 'status' => 'Aman', 'price' => 56000],
-            'Lumajang'        => ['name' => 'Lumajang', 'iph' => 0.12, 'status' => 'Aman', 'price' => 55000],
-            'Kab_Probolinggo' => ['name' => 'Kab. Probolinggo', 'iph' => 1.42, 'status' => 'Waspada', 'price' => 54500],
-            'Kota_Probolinggo'=> ['name' => 'Kota Probolinggo', 'iph' => 0.20, 'status' => 'Aman', 'price' => 54000]
-        ];
-
         // Master Data Komoditas Strategis Pasar Panji dengan Nilai HAP & Simulasi Perbandingan Harga 7 Kabupaten/Kota Sekarkijang
         $commoditiesMaster = [
             [
                 'id' => 'Cabe Rawit Merah', 'name' => 'Cabe Rawit Merah', 'price' => 62000, 'hap' => 57000, 'unit' => 'kg', 'change' => 3.2, 'status' => 'Intervensi', 'cv' => '22.4%', 'risk' => 87, 'stok' => '12.4 Ton', 'need' => '28 Ton', 'days' => 13,
-                'prices_sekarkijang' => ['Situbondo' => 62000, 'Jember' => 65000, 'Banyuwangi' => 58000, 'Bondowoso' => 60000, 'Lumajang' => 59000, 'Kab_Probolinggo' => 63500, 'Kota_Probolinggo' => 63000]
             ],
             [
                 'id' => 'Bawang Merah (Super)', 'name' => 'Bawang Merah (Super)', 'price' => 24000, 'hap' => 22000, 'unit' => 'kg', 'change' => 8.3, 'status' => 'Intervensi', 'cv' => '18.1%', 'risk' => 73, 'stok' => '32 Ton', 'need' => '45 Ton', 'days' => 21,
-                'prices_sekarkijang' => ['Situbondo' => 24000, 'Jember' => 26000, 'Banyuwangi' => 23000, 'Bondowoso' => 22500, 'Lumajang' => 23500, 'Kab_Probolinggo' => 25000, 'Kota_Probolinggo' => 24800]
             ],
             [
                 'id' => 'Cabe Merah Besar', 'name' => 'Cabe Merah Besar', 'price' => 30000, 'hap' => 25000, 'unit' => 'kg', 'change' => 33.3, 'status' => 'Waspada', 'cv' => '14.8%', 'risk' => 62, 'stok' => '18.5 Ton', 'need' => '22 Ton', 'days' => 25,
-                'prices_sekarkijang' => ['Situbondo' => 30000, 'Jember' => 32000, 'Banyuwangi' => 28000, 'Bondowoso' => 29000, 'Lumajang' => 28500, 'Kab_Probolinggo' => 31000, 'Kota_Probolinggo' => 30500]
             ],
             [
                 'id' => 'Telur Ayam Ras', 'name' => 'Telur Ayam Ras', 'price' => 25000, 'hap' => 27000, 'unit' => 'kg', 'change' => 0.0, 'status' => 'Aman', 'cv' => '3.8%', 'risk' => 48, 'stok' => '58 Ton', 'need' => '60 Ton', 'days' => 29,
-                'prices_sekarkijang' => ['Situbondo' => 25000, 'Jember' => 25500, 'Banyuwangi' => 26000, 'Bondowoso' => 24800, 'Lumajang' => 25200, 'Kab_Probolinggo' => 25800, 'Kota_Probolinggo' => 25600]
             ],
             [
                 'id' => 'Daging Ayam Ras', 'name' => 'Daging Ayam Ras', 'price' => 36000, 'hap' => 36750, 'unit' => 'kg', 'change' => -8.3, 'status' => 'Aman', 'cv' => '5.4%', 'risk' => 35, 'stok' => '75 Ton', 'need' => '65 Ton', 'days' => 34,
-                'prices_sekarkijang' => ['Situbondo' => 36000, 'Jember' => 37500, 'Banyuwangi' => 35000, 'Bondowoso' => 35500, 'Lumajang' => 36000, 'Kab_Probolinggo' => 37000, 'Kota_Probolinggo' => 36800]
             ],
             [
                 'id' => 'Beras Premium (TH 55)', 'name' => 'Beras Premium (TH 55)', 'price' => 15000, 'hap' => 14900, 'unit' => 'kg', 'change' => 0.0, 'status' => 'Aman', 'cv' => '1.2%', 'risk' => 31, 'stok' => '850 Ton', 'need' => '600 Ton', 'days' => 42,
-                'prices_sekarkijang' => ['Situbondo' => 15000, 'Jember' => 15200, 'Banyuwangi' => 14900, 'Bondowoso' => 14800, 'Lumajang' => 14950, 'Kab_Probolinggo' => 15100, 'Kota_Probolinggo' => 15000]
             ],
             [
                 'id' => 'Minyak Goreng Curah', 'name' => 'Minyak Goreng Curah', 'price' => 16500, 'hap' => 15700, 'unit' => 'L', 'change' => 0.0, 'status' => 'Aman', 'cv' => '1.5%', 'risk' => 28, 'stok' => '62.000 L', 'need' => '38.000 L', 'days' => 48,
-                'prices_sekarkijang' => ['Situbondo' => 16500, 'Jember' => 16800, 'Banyuwangi' => 16200, 'Bondowoso' => 16300, 'Lumajang' => 16400, 'Kab_Probolinggo' => 16600, 'Kota_Probolinggo' => 16500]
             ],
             [
                 'id' => 'Gula Kristal Putih', 'name' => 'Gula Kristal Putih', 'price' => 17000, 'hap' => 17500, 'unit' => 'kg', 'change' => 0.0, 'status' => 'Aman', 'cv' => '2.0%', 'risk' => 22, 'stok' => '120 Ton', 'need' => '90 Ton', 'days' => 40,
-                'prices_sekarkijang' => ['Situbondo' => 17000, 'Jember' => 17200, 'Banyuwangi' => 16900, 'Bondowoso' => 16800, 'Lumajang' => 17000, 'Kab_Probolinggo' => 17100, 'Kota_Probolinggo' => 17050]
             ],
             [
                 'id' => 'Beras Medium (Bulog)', 'name' => 'Beras Medium (Bulog)', 'price' => 12500, 'hap' => 12500, 'unit' => 'kg', 'change' => 0.0, 'status' => 'Aman', 'cv' => '2.1%', 'risk' => 18, 'stok' => '1.250 Ton', 'need' => '820 Ton', 'days' => 45,
-                'prices_sekarkijang' => ['Situbondo' => 12500, 'Jember' => 12500, 'Banyuwangi' => 12500, 'Bondowoso' => 12500, 'Lumajang' => 12500, 'Kab_Probolinggo' => 12500, 'Kota_Probolinggo' => 12500]
             ],
             [
                 'id' => 'Bawang Putih Sinco/Honan', 'name' => 'Bawang Putih Sinco/Honan', 'price' => 34000, 'hap' => 32000, 'unit' => 'kg', 'change' => 0.0, 'status' => 'Aman', 'cv' => '4.2%', 'risk' => 28, 'stok' => '45 Ton', 'need' => '35 Ton', 'days' => 38,
-                'prices_sekarkijang' => ['Situbondo' => 34000, 'Jember' => 35000, 'Banyuwangi' => 33500, 'Bondowoso' => 33800, 'Lumajang' => 34200, 'Kab_Probolinggo' => 34500, 'Kota_Probolinggo' => 34300]
             ],
             [
                 'id' => 'Daging Sapi Paha Belakang (Super)', 'name' => 'Daging Sapi Paha Belakang', 'price' => 120000, 'hap' => 130000, 'unit' => 'kg', 'change' => 0.0, 'status' => 'Aman', 'cv' => '1.8%', 'risk' => 16, 'stok' => '25 Ton', 'need' => '18 Ton', 'days' => 41,
-                'prices_sekarkijang' => ['Situbondo' => 120000, 'Jember' => 125000, 'Banyuwangi' => 118000, 'Bondowoso' => 115000, 'Lumajang' => 118000, 'Kab_Probolinggo' => 122000, 'Kota_Probolinggo' => 121000]
             ],
         ];
 
-        // Cari komoditas yang dipilih untuk grafik perbandingan Sekarkijang
-        $activeComparisonCommodity = $commoditiesMaster[0];
-        if ($selectedCommodity !== 'all') {
-            foreach ($commoditiesMaster as $cItem) {
-                if (str_contains(strtolower($cItem['name']), strtolower($selectedCommodity))) {
-                    $activeComparisonCommodity = $cItem;
-                    break;
+        if ($usingSpreadsheetMonitoringData) {
+            $strategicCommodities = collect($commoditiesMaster)->keyBy('name');
+            $hapReferenceNames = [
+                'Daging Sapi Paha Belakang (Super)' => 'Daging Sapi Paha Belakang',
+                'Beras Medium' => 'Beras Medium (Bulog)',
+                'Beras Premium' => 'Beras Premium (TH 55)',
+                'Cabai Merah Besar' => 'Cabe Merah Besar',
+                'Cabai Rawit Merah' => 'Cabe Rawit Merah',
+                'Bawang Merah' => 'Bawang Merah (Super)',
+                'Minyak Goreng Sawit Curah' => 'Minyak Goreng Curah',
+                'Gula Pasir Curah' => 'Gula Kristal Putih',
+                'Bawang Putih Honan' => 'Bawang Putih Sinco/Honan',
+                'Daging Sapi Paha Belakang' => 'Daging Sapi Paha Belakang',
+            ];
+            $sourceCommodityData = $usingSp2kpMonitoringData
+                ? $sp2kpCommodityData
+                : $sikepoCommodityData;
+            $commoditiesMaster = [];
+
+            foreach ($sourceCommodityData as $name => $commodity) {
+                $periodPrices = array_filter(
+                    $commodity['prices'],
+                    fn ($priceDate) => $priceDate >= $startDate && $priceDate <= $endDate,
+                    ARRAY_FILTER_USE_KEY
+                );
+                if ($periodPrices === []) {
+                    continue;
                 }
+
+                ksort($periodPrices);
+                $latestDate = array_key_last($periodPrices);
+                $priceValues = array_values($periodPrices);
+                $latestPrice = $priceValues[array_key_last($priceValues)];
+                $previousPrice = count($priceValues) > 1
+                    ? $priceValues[count($priceValues) - 2]
+                    : null;
+                $strategicName = $hapReferenceNames[$name] ?? $name;
+                $strategicCommodity = $strategicCommodities->get($strategicName);
+
+                $commoditiesMaster[] = [
+                    'id' => $name,
+                    'name' => $name,
+                    'price' => $latestPrice,
+                    'hap' => $strategicCommodity['hap'] ?? null,
+                    'unit' => $commodity['unit'] !== ''
+                        ? $commodity['unit']
+                        : ($usingSp2kpMonitoringData ? '—' : ($strategicCommodity['unit'] ?? '—')),
+                    'change' => $previousPrice === null
+                        ? 0
+                        : round((($latestPrice - $previousPrice) / $previousPrice) * 100, 1),
+                    'status' => $strategicCommodity['status'] ?? 'Acuan HAP tidak tersedia',
+                    'date' => $latestDate,
+                ];
             }
         }
 
-        // Master 12 Pasar Terpantau Situbondo
-        $situbondoMarketsList = [
-            ['name' => 'Pasar Panji (Mimbaan)', 'district' => 'Panji', 'status' => 'Intervensi', 'lat' => -7.7025, 'lng' => 113.9922],
-            ['name' => 'Pasar Besuki', 'district' => 'Besuki', 'status' => 'Intervensi', 'lat' => -7.7348, 'lng' => 113.6931],
-            ['name' => 'Pasar Jangkar', 'district' => 'Jangkar', 'status' => 'Intervensi', 'lat' => -7.7120, 'lng' => 114.1500],
-            ['name' => 'Pasar Panarukan', 'district' => 'Panarukan', 'status' => 'Waspada', 'lat' => -7.6950, 'lng' => 113.9350],
-            ['name' => 'Pasar Asembagus', 'district' => 'Asembagus', 'status' => 'Waspada', 'lat' => -7.7600, 'lng' => 114.2200],
-            ['name' => 'Pasar Bungatan', 'district' => 'Bungatan', 'status' => 'Waspada', 'lat' => -7.7180, 'lng' => 113.8200],
-            ['name' => 'Pasar Mangaran', 'district' => 'Mangaran', 'status' => 'Waspada', 'lat' => -7.6500, 'lng' => 114.0200],
-            ['name' => 'Pasar Mlandingan', 'district' => 'Mlandingan', 'status' => 'Waspada', 'lat' => -7.7080, 'lng' => 113.8700],
-            ['name' => 'Pasar Kendit', 'district' => 'Kendit', 'status' => 'Stabil', 'lat' => -7.7100, 'lng' => 113.9000],
-            ['name' => 'Pasar Banyuglugur', 'district' => 'Banyuglugur', 'status' => 'Stabil', 'lat' => -7.7200, 'lng' => 113.6300],
-            ['name' => 'Pasar Suboh', 'district' => 'Suboh', 'status' => 'Stabil', 'lat' => -7.7100, 'lng' => 113.7500],
-            ['name' => 'Pasar Sumbermalang', 'district' => 'Sumbermalang', 'status' => 'Stabil', 'lat' => -7.8000, 'lng' => 113.7300],
-        ];
-
         // Ambil daftar unik komoditas dari database MySQL untuk dropdown filter
-        $dbCommodityOptions = \Illuminate\Support\Facades\DB::table('harga_pasar')
-            ->where('nama_pasar', 'LIKE', '%Panji%')
-            ->distinct()
-            ->pluck('nama_barang');
+        $dbCommodityOptions = $usingSp2kpMonitoringData
+            ? $sp2kpCommodityOptions
+            : ($usingSikepoMonitoringData
+                ? $sikepoCommodityOptions
+                : \Illuminate\Support\Facades\DB::table('harga_pasar')
+                ->where('nama_pasar', 'LIKE', '%Panji%')
+                ->distinct()
+                ->pluck('nama_barang'));
     @endphp
 
     <!-- SIDEBAR NAVIGATION -->
@@ -328,7 +567,7 @@
     </aside>
 
     <!-- MAIN CONTENT AREA -->
-    <div class="flex-1 ml-64 min-h-screen flex flex-col">
+    <div class="flex-1 min-w-0 ml-64 min-h-screen flex flex-col">
 
         <!-- Top Navigation Header + GLOBAL FILTER FORM + ADMIN TPID PROFILE DROPDOWN -->
         <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
@@ -349,23 +588,23 @@
                     @elseif($currentTab === 'ews')
                         <i class="fa-solid fa-shield-halved text-amber-500"></i> Early Warning System (EWS) Inflasi
                     @elseif($currentTab === 'monitoring_harga')
-                        <i class="fa-solid fa-store text-blue-500"></i> Monitoring Harga (Sumber: {{ strtoupper($dataSource) }})
+                        <i class="fa-solid fa-store text-blue-500"></i> Monitoring Harga (Sumber: {{ $sourceDisplayName }})
                     @elseif($currentTab === 'monitoring_pasar')
                         <i class="fa-solid fa-map-location-dot text-indigo-500"></i> Monitoring Persebaran Pasar Rakyat
                     @else
                         <i class="fa-solid fa-house text-blue-500"></i> Executive Overview SIGAP SEKARKIJANG
                     @endif
                 </h2>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400">TPID Kabupaten Situbondo &bull; Data Real Pasar Panji: <span class="font-bold text-amber-600 dark:text-amber-400">{{ $startDate }} s/d {{ $endDate }}</span></p>
             </div>
 
             <!-- RIGHT CONTAINER: FILTER FORM & ADMIN PROFILE DROPDOWN -->
             <div class="flex flex-wrap items-center gap-3">
                 
                 <!-- GLOBAL FILTER BAR -->
-                <form method="GET" action="" class="flex flex-wrap items-center gap-2">
+                <form id="dashboardFilterForm" method="GET" action="{{ url('/') }}" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="tab" value="{{ $currentTab }}">
                     <input type="hidden" name="source" value="{{ $dataSource }}">
+                    <input type="hidden" name="date_filter_applied" value="1">
                     
                     <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1">
                         <label for="region" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Pasar:</label>
@@ -376,14 +615,14 @@
 
                     <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1">
                         <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Tanggal:</span>
-                        <input type="date" name="start_date" value="{{ $startDate }}" class="bg-transparent text-xs font-bold text-slate-800 dark:text-white focus:outline-none cursor-pointer">
+                        <input type="date" name="start_date" value="{{ $startDate }}" data-date-filter class="bg-transparent text-xs font-bold text-slate-800 dark:text-white focus:outline-none cursor-pointer">
                         <span class="text-[10px] text-slate-400">s/d</span>
-                        <input type="date" name="end_date" value="{{ $endDate }}" class="bg-transparent text-xs font-bold text-slate-800 dark:text-white focus:outline-none cursor-pointer">
+                        <input type="date" name="end_date" value="{{ $endDate }}" data-date-filter class="bg-transparent text-xs font-bold text-slate-800 dark:text-white focus:outline-none cursor-pointer">
                     </div>
 
                     <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1">
                         <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Komoditas:</span>
-                        <select name="commodity" class="bg-transparent text-xs font-bold text-amber-600 dark:text-amber-400 focus:outline-none cursor-pointer max-w-[170px]">
+                        <select id="commodityFilter" name="commodity" class="bg-transparent text-xs font-bold text-amber-600 dark:text-amber-400 focus:outline-none cursor-pointer max-w-[170px]">
                             <option value="all" {{ $selectedCommodity === 'all' ? 'selected' : '' }}>Semua Komoditas</option>
                             @foreach($dbCommodityOptions as $commName)
                                 <option value="{{ $commName }}" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white" {{ $selectedCommodity === $commName ? 'selected' : '' }}>
@@ -442,866 +681,25 @@
 
             <!-- TAB 1: BERANDA -->
             @if ($currentTab === 'beranda')
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-xl">
-                            <i class="fa-solid fa-chart-line text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">IPH Pasar Panji</p>
-                            <p class="text-sm font-bold text-red-500">
-                                +1.18%
-                                <span class="text-[10px] font-normal text-slate-400">(Okt 2026)</span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl">
-                            <i class="fa-solid fa-arrow-trend-up text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Komoditas Naik</p>
-                            <p class="text-sm font-bold text-red-600 dark:text-red-400">8 Komoditas</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-xl">
-                            <i class="fa-solid fa-arrow-trend-down text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Komoditas Turun</p>
-                            <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400">6 Komoditas</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-xl">
-                            <i class="fa-solid fa-layer-group text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Komoditas Terpantau</p>
-                            <p class="text-base font-bold text-blue-600 dark:text-blue-400">41 Komoditas</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-3">
-                    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-chart-line text-emerald-500"></i> Grafik Pergerakan Harga Harian Pasar Rakyat Panji (Data Real MySQL)
-                            </h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Filter Terpasang: {{ $startDate }} s/d {{ $endDate }}</p>
-                        </div>
-                        <a href="?tab=monitoring_harga" class="text-xs font-bold text-blue-500 hover:underline">Lihat Detail &rarr;</a>
-                    </div>
-                    <div class="relative h-[420px]">
-                        <canvas id="priceChart"></canvas>
-                    </div>
-                </div>
-
-            <!-- TAB 2: MONITORING HARGA (SIKEPO & SP2KP) -->
+                @include('dashboard.pages.beranda')
             @elseif ($currentTab === 'monitoring_harga')
-                <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-3">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 dark:border-slate-700 pb-2.5 gap-2">
-                        <div>
-                            <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-store text-blue-500"></i>
-                                Monitoring Harga Komoditas
-                                <span class="px-2 py-0.5 rounded-lg text-xs font-black {{ $dataSource === 'sp2kp' ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' : 'bg-blue-500/20 text-blue-500 border border-blue-500/30' }}">
-                                    Sumber: {{ $dataSource === 'sp2kp' ? 'SP2KP (Kemendag Dummy)' : 'SIKEPO (Pasar Panji Real)' }}
-                                </span>
-                            </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                {{ $dataSource === 'sp2kp' ? 'Data integrasi simulasi SP2KP Kementerian Perdagangan diselaraskan dengan komoditas SIKEPO' : 'Data terintegrasi langsung dari tabel MySQL harga_pasar Kabupaten Situbondo' }}
-                            </p>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <a href="?tab=monitoring_harga&source=sikeppo" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 {{ $dataSource === 'sikeppo' ? 'bg-blue-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white' }}">
-                                <i class="fa-solid fa-building-store"></i> SIKEPO (Panji)
-                            </a>
-                            <a href="?tab=monitoring_harga&source=sp2kp" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 {{ $dataSource === 'sp2kp' ? 'bg-amber-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white' }}">
-                                <i class="fa-solid fa-globe"></i> SP2KP (Kemendag)
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto text-[11px] max-h-[380px] overflow-y-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="sticky top-0 bg-white dark:bg-slate-800 z-10">
-                                <tr class="text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700/60 uppercase text-[10px]">
-                                    <th class="pb-2">No</th>
-                                    <th class="pb-2">Nama Komoditas</th>
-                                    <th class="pb-2 text-right">Harga Rata-rata ({{ strtoupper($dataSource) }})</th>
-                                    <th class="pb-2 text-right text-amber-500 dark:text-amber-400">HAP (Harga Acuan)</th>
-                                    <th class="pb-2 text-center">Satuan</th>
-                                    <th class="pb-2 text-center">Perubahan</th>
-                                    <th class="pb-2 text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-700/40 font-semibold">
-                                @php $rowNo = 1; @endphp
-                                @foreach($commoditiesMaster as $c)
-                                    @if($selectedCommodity === 'all' || str_contains(strtolower($c['name']), strtolower($selectedCommodity)))
-                                        @php
-                                            $finalPrice = $c['price'];
-                                            if ($dataSource === 'sp2kp') {
-                                                $finalPrice = round($c['price'] * 1.02);
-                                            }
-                                            $isOverHap = $finalPrice > $c['hap'];
-                                        @endphp
-                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition">
-                                            <td class="py-2 text-slate-400">{{ $rowNo++ }}</td>
-                                            <td class="py-2 text-slate-800 dark:text-slate-200 font-bold">{{ $c['name'] }}</td>
-                                            <td class="py-2 text-right font-extrabold text-slate-900 dark:text-white">Rp {{ number_format($finalPrice, 0, ',', '.') }}</td>
-                                            <td class="py-2 text-right font-bold {{ $isOverHap ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' }}">
-                                                Rp {{ number_format($c['hap'], 0, ',', '.') }}
-                                            </td>
-                                            <td class="py-2 text-center text-slate-500 dark:text-slate-400">/{{ $c['unit'] }}</td>
-                                            <td class="py-2 text-center">
-                                                @if($c['change'] > 0)
-                                                    <span class="text-red-500 font-bold"><i class="fa-solid fa-arrow-up mr-1"></i>+{{ $c['change'] }}%</span>
-                                                @elseif($c['change'] < 0)
-                                                    <span class="text-emerald-500 font-bold"><i class="fa-solid fa-arrow-down mr-1"></i>{{ $c['change'] }}%</span>
-                                                @else
-                                                    <span class="text-slate-400 font-normal">0,0%</span>
-                                                @endif
-                                            </td>
-                                            <td class="py-2 text-center">
-                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $c['status'] === 'Intervensi' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : ($c['status'] === 'Waspada' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20') }}">
-                                                    {{ $c['status'] }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    @endif
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- GRAFIK TREN HARGA LEBAR PENUH -->
-                <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
-                    <div class="xl:col-span-12 bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-3">
-                        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2.5">
-                            <h3 class="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-chart-line text-blue-500"></i> Tren Grafik Pergerakan Harga Komoditas ({{ strtoupper($dataSource) }})
-                            </h3>
-                            <span class="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-lg font-semibold">{{ strtoupper($dataSource) }} Live Data</span>
-                        </div>
-                        <div class="relative h-[360px]">
-                            <canvas id="chartHargaTren"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-            <!-- TAB 3: MONITORING PASAR -->
+                @include('dashboard.pages.monitoring_harga')
             @elseif ($currentTab === 'monitoring_pasar')
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-xl">
-                            <i class="fa-solid fa-store text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Pasar Terpantau</p>
-                            <p class="text-base font-black text-slate-900 dark:text-white">12 Pasar Rakyat</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl">
-                            <i class="fa-solid fa-triangle-exclamation text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status Intervensi</p>
-                            <p class="text-base font-black text-red-600 dark:text-red-400">3 Pasar (Panji, Besuki, Jangkar)</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-xl">
-                            <i class="fa-solid fa-eye text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status Waspada</p>
-                            <p class="text-base font-black text-amber-600 dark:text-amber-400">5 Pasar</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-xl">
-                            <i class="fa-solid fa-circle-check text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status Stabil</p>
-                            <p class="text-base font-black text-emerald-600 dark:text-emerald-400">4 Pasar</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <div class="lg:col-span-8 bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4">
-                        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-map-location-dot text-indigo-500"></i> Peta Geografis 12 Pasar Rakyat (Situbondo)
-                            </h3>
-                        </div>
-                        <div id="map" class="shadow-inner border border-slate-200 dark:border-slate-700"></div>
-                    </div>
-
-                    <div class="lg:col-span-4 bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <i class="fa-solid fa-list-check text-blue-500"></i> Daftar 12 Pasar Utama
-                                </h3>
-                                <span class="text-xs text-slate-400">Total: {{ count($situbondoMarketsList) }}</span>
-                            </div>
-
-                            <div class="mt-3 space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
-                                @foreach($situbondoMarketsList as $mObj)
-                                    <div class="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between hover:border-blue-500/50 transition cursor-pointer">
-                                        <div>
-                                            <p class="text-xs font-bold text-slate-800 dark:text-slate-100">{{ $mObj['name'] }}</p>
-                                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i> Kec. {{ $mObj['district'] }}</p>
-                                        </div>
-                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ $mObj['status'] === 'Intervensi' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : ($mObj['status'] === 'Waspada' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20') }}">
-                                            {{ $mObj['status'] }}
-                                        </span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t border-slate-200 dark:border-slate-700">
-                            <a href="{{ Route::has('kelola-data') ? route('kelola-data') : '#' }}" class="w-full block text-center bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-2 rounded-xl transition shadow-md">
-                                <i class="fa-solid fa-plus-circle mr-1"></i> Kelola Master Data Pasar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-            <!-- TAB 4: DASHBOARD SEKARKIJANG (GRAFIK PERGERAKAN HARGA HARIAN 7 WILAYAH - LINE CHART) -->
+                @include('dashboard.pages.monitoring_pasar')
             @elseif ($currentTab === 'sekarkijang')
-                <div class="bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 dark:border-slate-700 pb-3 gap-2">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-chart-bar text-amber-500"></i>
-                                Indeks Perkembangan Harga (IPH) Antar 7 Wilayah Sekarkijang
-                            </h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Indikator Resmi Perubahan Harga Komoditas Pangan Pokok Sub-Provinsi Jatim</p>
-                        </div>
-                        <span class="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full font-bold">
-                            Oktober 2026
-                        </span>
-                    </div>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                        @foreach($regionsList as $rKey => $rMeta)
-                            <div class="p-3 rounded-xl border transition-all flex flex-col justify-between {{ $curRegion === $rKey ? 'bg-blue-500/10 border-blue-500/50 shadow-md ring-2 ring-blue-500/30' : 'bg-slate-100 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700/50' }}">
-                                <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{{ $rMeta['name'] }}</div>
-                                <div class="mt-2 flex items-baseline justify-between">
-                                    <span class="text-base font-extrabold {{ $rMeta['iph'] > 0 ? 'text-red-600 dark:text-red-400' : ($rMeta['iph'] < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400') }}">
-                                        {{ ($rMeta['iph'] > 0 ? '+' : '') . $rMeta['iph'] }}%
-                                    </span>
-                                    <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded {{ $rMeta['iph'] > 0 ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500' }}">
-                                        {{ $rMeta['status'] }}
-                                    </span>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- GRAFIK IPH MOM ANTAR 7 WILAYAH -->
-                <div class="bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4">
-                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 border-b border-slate-200 dark:border-slate-700 pb-3">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-chart-line text-blue-500"></i>
-                                Perubahan Pergerakan IPH (MoM) Antar 7 Kabupaten/Kota Sekarkijang
-                            </h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tren Fluktuasi Persentase IPH Bulanan di Karesidenan Besuki &amp; Lumajang</p>
-                        </div>
-                    </div>
-
-                    <div class="relative h-[340px]">
-                        <canvas id="interRegionChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- GRAFIK PERGERAKAN HARGA HARIAN SEKARKIJANG (LINE CHART LENGKAP SEPERTI PASAR PANJI) -->
-                <div class="bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 dark:border-slate-700 pb-3 gap-3">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-chart-line text-emerald-500"></i>
-                                Grafik Pergerakan Harga Harian Antar 7 Kabupaten/Kota (Sekarkijang)
-                            </h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Visualisasi Tren Fluktuasi Harga Harian Komoditas Pangan Pokok Sub-Provinsi Jawa Timur</p>
-                        </div>
-
-                        <!-- FILTER KHUSUS KOMODITAS & TANGGAL PADA GRAFIK PERGERAKAN SEKARKIJANG -->
-                        <form method="GET" action="" class="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-700/80">
-                            <input type="hidden" name="tab" value="sekarkijang">
-                            <input type="hidden" name="source" value="{{ $dataSource }}">
-
-                            <div class="flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                                <span>Komoditas:</span>
-                                <select name="commodity" onchange="this.form.submit()" class="bg-white dark:bg-slate-800 text-xs font-bold text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 focus:outline-none cursor-pointer">
-                                    @foreach($commoditiesMaster as $cOpt)
-                                        <option value="{{ $cOpt['name'] }}" {{ ($activeComparisonCommodity['name'] === $cOpt['name']) ? 'selected' : '' }}>
-                                            {{ $cOpt['name'] }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-l border-slate-200 dark:border-slate-700 pl-2">
-                                <span>Tanggal:</span>
-                                <input type="date" name="start_date" value="{{ $startDate }}" onchange="this.form.submit()" class="bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 focus:outline-none cursor-pointer">
-                                <span>s/d</span>
-                                <input type="date" name="end_date" value="{{ $endDate }}" onchange="this.form.submit()" class="bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 focus:outline-none cursor-pointer">
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- CONTAINER GRAFIK PERGERAKAN HARGA HARIAN (LINE CHART) -->
-                    <div class="relative h-[400px]">
-                        <canvas id="sekarkijangDailyLineChart"></canvas>
-                    </div>
-
-                    <!-- RINGKASAN DISPARITAS HARGA -->
-                    @php
-                        $compPrices = $activeComparisonCommodity['prices_sekarkijang'];
-                        $minCity = array_search(min($compPrices), $compPrices);
-                        $maxCity = array_search(max($compPrices), $compPrices);
-                        $minP = min($compPrices);
-                        $maxP = max($compPrices);
-                        $gapP = $maxP - $minP;
-                    @endphp
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs font-semibold">
-                        <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex justify-between items-center">
-                            <span class="text-slate-600 dark:text-slate-300">Harga Terendah (Surplus):</span>
-                            <span class="font-black text-emerald-600 dark:text-emerald-400">{{ str_replace('_', ' ', $minCity) }} (Rp {{ number_format($minP, 0, ',', '.') }})</span>
-                        </div>
-                        <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex justify-between items-center">
-                            <span class="text-slate-600 dark:text-slate-300">Harga Tertinggi (Defisit):</span>
-                            <span class="font-black text-red-600 dark:text-red-400">{{ str_replace('_', ' ', $maxCity) }} (Rp {{ number_format($maxP, 0, ',', '.') }})</span>
-                        </div>
-                        <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex justify-between items-center">
-                            <span class="text-slate-600 dark:text-slate-300">Selisih Disparitas:</span>
-                            <span class="font-black text-blue-600 dark:text-blue-400">Rp {{ number_format($gapP, 0, ',', '.') }} / {{ $activeComparisonCommodity['unit'] }}</span>
-                        </div>
-                    </div>
-                </div>
-
-            <!-- TAB 5: EARLY WARNING SYSTEM (EWS) -->
+                @include('dashboard.pages.sekarkijang')
             @elseif ($currentTab === 'ews')
-                <div class="bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4">
-                    <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-shield-halved text-amber-500"></i> Early Warning System (EWS) 20 Komoditas Strategis
-                            </h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Bobot Risk Score: Harga (40%), Volatilitas (25%), Stok (20%), Disparitas (15%)</p>
-                        </div>
-                        <span class="text-xs bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-1 rounded-full font-bold">
-                            Risk Score TPID: 82 (Waspada)
-                        </span>
-                    </div>
-
-                    <div class="overflow-x-auto text-[11px] max-h-[450px] overflow-y-auto">
-                        <table class="w-full text-left">
-                            <thead class="sticky top-0 bg-white dark:bg-slate-800 z-10">
-                                <tr class="text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700/60 uppercase text-[10px]">
-                                    <th class="pb-2">Komoditas</th>
-                                    <th class="pb-2 text-right">Harga Harian</th>
-                                    <th class="pb-2 text-center">Volatilitas (CV)</th>
-                                    <th class="pb-2 text-center">Risk Score (0-100)</th>
-                                    <th class="pb-2 text-center">Status Peringatan</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-700/40 font-semibold">
-                                @foreach($commoditiesMaster as $c)
-                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition">
-                                        <td class="py-2.5 text-slate-800 dark:text-slate-200 font-bold">{{ $c['name'] }}</td>
-                                        <td class="py-2.5 text-right font-bold text-slate-900 dark:text-white">Rp {{ number_format($c['price'], 0, ',', '.') }}</td>
-                                        <td class="py-2.5 text-center text-slate-500 dark:text-slate-400">{{ $c['cv'] }}</td>
-                                        <td class="py-2.5 text-center font-black {{ $c['risk'] >= 70 ? 'text-red-500' : ($c['risk'] >= 45 ? 'text-amber-500' : 'text-emerald-500') }}">{{ $c['risk'] }}</td>
-                                        <td class="py-2.5 text-center">
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $c['status'] === 'Intervensi' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : ($c['status'] === 'Waspada' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20') }}">
-                                                {{ $c['status'] }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            <!-- TAB 6: STOK DAN PASOKAN -->
+                @include('dashboard.pages.ews')
             @elseif ($currentTab === 'stok')
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-xl">
-                            <i class="fa-solid fa-wheat-awn text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stok Beras SPHP Bulog</p>
-                            <p class="text-base font-black text-slate-900 dark:text-white">1.250 Ton</p>
-                            <span class="text-[10px] text-emerald-500 font-bold"><i class="fa-solid fa-check mr-1"></i>Aman 45 Hari</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-xl">
-                            <i class="fa-solid fa-bottle-droplet text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stok Minyak Goreng</p>
-                            <p class="text-base font-black text-slate-900 dark:text-white">62.000 Liter</p>
-                            <span class="text-[10px] text-emerald-500 font-bold"><i class="fa-solid fa-check mr-1"></i>Aman 48 Hari</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl">
-                            <i class="fa-solid fa-pepper-hot text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pasokan Cabai Rawit</p>
-                            <p class="text-base font-black text-red-600 dark:text-red-400">12,4 Ton / Mgg</p>
-                            <span class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Defisit 15%</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 rounded-xl">
-                            <i class="fa-solid fa-truck-ramp-box text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kelancaran Distribusi</p>
-                            <p class="text-base font-black text-emerald-600 dark:text-emerald-400">92% Lancar</p>
-                            <span class="text-[10px] text-slate-400">Sentra Banyuwangi &amp; Jember</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <div class="lg:col-span-12 bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4">
-                        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
-                            <div>
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <i class="fa-solid fa-scale-balanced text-blue-500"></i> Neraca Ketersediaan Pangan Pokok (Kab. Situbondo)
-                                </h3>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Sumber Data: Dinas Pertanian dan Ketahanan Pangan (DKPP) Situbondo</p>
-                            </div>
-                            <span class="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-lg font-bold">
-                                Real-Time Sync DKPP
-                            </span>
-                        </div>
-
-                        <div class="overflow-x-auto text-[11px] max-h-[400px] overflow-y-auto">
-                            <table class="w-full text-left">
-                                <thead class="sticky top-0 bg-white dark:bg-slate-800 z-10">
-                                    <tr class="text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700/60 uppercase text-[10px]">
-                                        <th class="pb-2">Komoditas</th>
-                                        <th class="pb-2 text-right">Stok Gudang</th>
-                                        <th class="pb-2 text-right">Kebutuhan/Bln</th>
-                                        <th class="pb-2 text-center">Ketahanan (Days of Stock)</th>
-                                        <th class="pb-2 text-center">Status Neraca</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/40">
-                                    @foreach($commoditiesMaster as $c)
-                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition">
-                                            <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">{{ $c['name'] }}</td>
-                                            <td class="py-2.5 text-right font-semibold">{{ $c['stok'] }}</td>
-                                            <td class="py-2.5 text-right font-semibold">{{ $c['need'] }}</td>
-                                            <td class="py-2.5 text-center font-extrabold {{ $c['days'] < 20 ? 'text-red-500' : ($c['days'] < 30 ? 'text-amber-500' : 'text-emerald-500') }}">{{ $c['days'] }} Hari</td>
-                                            <td class="py-2.5 text-center">
-                                                <span class="px-2 py-0.5 rounded-full font-bold {{ $c['days'] < 20 ? 'bg-red-500/10 text-red-600' : ($c['days'] < 30 ? 'bg-amber-500/10 text-amber-600' : 'bg-emerald-500/10 text-emerald-600') }}">
-                                                    {{ $c['days'] < 20 ? 'Defisit Pasokan' : ($c['days'] < 30 ? 'Waspada' : 'Surplus / Aman') }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-            <!-- TAB 7: INTERVENSI TPID -->
+                @include('dashboard.pages.stok')
             @elseif ($currentTab === 'intervensi')
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-xl">
-                            <i class="fa-solid fa-hand-holding-hand text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Program Intervensi Aktif</p>
-                            <p class="text-base font-black text-slate-900 dark:text-white">12 Program</p>
-                            <span class="text-[10px] text-emerald-500 font-bold">+3 dari bulan lalu</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-xl">
-                            <i class="fa-solid fa-truck-moving text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Realisasi SPHP Bulog</p>
-                            <p class="text-base font-black text-emerald-600 dark:text-emerald-400">15,2 Ton</p>
-                            <span class="text-[10px] text-slate-400">+25% dari bulan lalu</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-xl">
-                            <i class="fa-solid fa-handshake-angle text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kerja Sama Antar Daerah</p>
-                            <p class="text-base font-black text-amber-600 dark:text-amber-400">3 KAD Aktif</p>
-                            <span class="text-[10px] text-slate-400">Banyuwangi, Jember, Probolinggo</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 rounded-xl">
-                            <i class="fa-solid fa-circle-check text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Efektivitas Intervensi</p>
-                            <p class="text-base font-black text-indigo-600 dark:text-indigo-400">84% (Efektif)</p>
-                            <span class="text-[10px] text-emerald-500 font-bold">+6% dibanding awal bulan</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <div class="lg:col-span-8 bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4">
-                        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
-                            <div>
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <i class="fa-solid fa-bullhorn text-blue-500"></i> Monitoring Program Intervensi TPID Situbondo
-                                </h3>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Strategi Pengendalian Inflasi Daerah (4K: Ketersediaan, Kelancaran, Keterjangkauan, Komunikasi)</p>
-                            </div>
-                            <span class="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-bold">
-                                TPID Kab. Situbondo
-                            </span>
-                        </div>
-
-                        <div class="overflow-x-auto text-[11px]">
-                            <table class="w-full text-left">
-                                <thead>
-                                    <tr class="text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700/60 uppercase text-[10px]">
-                                        <th class="pb-2">Program Intervensi</th>
-                                        <th class="pb-2">Komoditas Target</th>
-                                        <th class="pb-2">Lokasi / Sektor</th>
-                                        <th class="pb-2 text-center">Pelaksana</th>
-                                        <th class="pb-2 text-center">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/40">
-                                    <tr>
-                                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Operasi Pasar Hortikultura</td>
-                                        <td class="py-2.5 font-semibold text-red-500">Cabe Rawit &amp; Bawang Merah</td>
-                                        <td class="py-2.5 text-slate-600 dark:text-slate-300">Pasar Panji (Mimbaan) &amp; Besuki</td>
-                                        <td class="py-2.5 text-center font-bold">Diskoperindag / Bulog</td>
-                                        <td class="py-2.5 text-center"><span class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">Berjalan</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Gerakan Pangan Murah (GPM) Keliling</td>
-                                        <td class="py-2.5 font-semibold text-blue-500">Beras SPHP, Minyak, Telur</td>
-                                        <td class="py-2.5 text-slate-600 dark:text-slate-300">Besuki &amp; Jangkar</td>
-                                        <td class="py-2.5 text-center font-bold">DKPP Situbondo</td>
-                                        <td class="py-2.5 text-center"><span class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">Berjalan</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-2.5 font-bold text-slate-800 dark:text-slate-200">Kerja Sama Antar Daerah (KAD) Pasokan</td>
-                                        <td class="py-2.5 font-semibold text-amber-500">Cabe Rawit &amp; Sayuran</td>
-                                        <td class="py-2.5 text-slate-600 dark:text-slate-300">Kab. Banyuwangi &amp; Jember</td>
-                                        <td class="py-2.5 text-center font-bold">Bagian Perekonomian</td>
-                                        <td class="py-2.5 text-center"><span class="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-bold">MoU Aktif</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="lg:col-span-4 bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <i class="fa-solid fa-chart-line-down text-emerald-500"></i> Dampak Intervensi Cabe Rawit
-                                </h3>
-                                <span class="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-bold">Turun 3,1%</span>
-                            </div>
-
-                            <div class="mt-3 space-y-3 text-xs">
-                                <div class="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1">
-                                    <div class="flex justify-between items-center">
-                                        <span class="font-bold text-slate-800 dark:text-white">Awal Oktober (Puncak)</span>
-                                        <span class="font-extrabold text-red-500">Rp 64.000/kg</span>
-                                    </div>
-                                    <div class="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-700">
-                                        <span class="font-bold text-slate-800 dark:text-white">Akhir Oktober (Real Panji)</span>
-                                        <span class="font-extrabold text-emerald-500">Rp 62.000/kg</span>
-                                    </div>
-                                </div>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400 italic">"Intervensi TPID di Pasar Panji berhasil menekan fluktuasi harga cabe rawit secara terukur."</p>
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t border-slate-200 dark:border-slate-700">
-                            <a href="{{ Route::has('kelola-data') ? route('kelola-data') : '#' }}" class="w-full block text-center bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-2 rounded-xl transition shadow-md">
-                                <i class="fa-solid fa-plus-circle mr-1"></i> Tambah Jadwal Intervensi
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-            <!-- TAB 8: ANALISIS & PREDIKSI -->
+                @include('dashboard.pages.intervensi')
             @elseif ($currentTab === 'analisis')
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 rounded-xl">
-                            <i class="fa-solid fa-robot text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Model Forecasting</p>
-                            <p class="text-base font-black text-slate-900 dark:text-white">Random Forest / KNN</p>
-                            <span class="text-[10px] text-emerald-500 font-bold"><i class="fa-solid fa-check mr-1"></i>Akurasi Model 94,2%</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl">
-                            <i class="fa-solid fa-chart-line-up text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Proyeksi Puncak Harga</p>
-                            <p class="text-base font-black text-red-600 dark:text-red-400">Minggu III Des 2026</p>
-                            <span class="text-[10px] text-slate-400">Pemicu: HBKN (Nataru)</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-xl">
-                            <i class="fa-solid fa-percent text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Perkiraan Inflasi M-o-M</p>
-                            <p class="text-base font-black text-amber-600 dark:text-amber-400">+0,34%</p>
-                            <span class="text-[10px] text-slate-400">Bulan Desember 2026</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center space-x-4">
-                        <div class="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-xl">
-                            <i class="fa-solid fa-bullseye text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Faktor Pengaruh Utama</p>
-                            <p class="text-base font-black text-blue-600 dark:text-blue-400">Cuaca &amp; Demand HBKN</p>
-                            <span class="text-[10px] text-slate-400">Korelasi 82%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <div class="lg:col-span-8 bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 dark:border-slate-700 pb-3 gap-2">
-                            <div>
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <i class="fa-solid fa-chart-area text-blue-500"></i> Proyeksi Prediksi Harga Pasar Panji (AI Machine Learning)
-                                </h3>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Membandingkan Historis Harga Real MySQL dengan Proyeksi AI Masa Mendatang</p>
-                            </div>
-                            
-                            <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs">
-                                <span class="text-slate-400">Komoditas:</span>
-                                <span class="font-bold text-amber-500">Cabe Rawit Merah</span>
-                            </div>
-                        </div>
-
-                        <div class="relative h-[300px]">
-                            <canvas id="chartPrediksiAnalisis"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="lg:col-span-4 space-y-4">
-                        <div class="bg-gradient-to-br from-indigo-900/80 to-slate-900 p-4 rounded-2xl border border-indigo-500/40 shadow-xl space-y-2">
-                            <h3 class="text-xs font-extrabold text-amber-400 flex items-center gap-2">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Predictive Insight
-                            </h3>
-                            <p class="text-[11px] text-slate-200 leading-relaxed italic">
-                                "Berdasarkan data harian Pasar Panji bulan Oktober 2026 di MySQL, cabe rawit merah diproyeksikan mengalami kenaikan bertahap mendekati akhir tahun akibat faktor perubahan musim."
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-            <!-- TAB 9: LAPORAN -->
+                @include('dashboard.pages.analisis')
             @elseif ($currentTab === 'laporan')
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="p-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl">
-                                <i class="fa-solid fa-file-pdf text-xl"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-slate-800 dark:text-white">Laporan Eksekutif IPH</p>
-                                <p class="text-[10px] text-slate-400">PDF &bull; Oktober 2026</p>
-                            </div>
-                        </div>
-                        <button class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition">
-                            <i class="fa-solid fa-download text-xs"></i>
-                        </button>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="p-3 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl">
-                                <i class="fa-solid fa-file-excel text-xl"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-slate-800 dark:text-white">Rekapitulasi Pasar Panji</p>
-                                <p class="text-[10px] text-slate-400">XLSX &bull; Data Harian MySQL</p>
-                            </div>
-                        </div>
-                        <button class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition">
-                            <i class="fa-solid fa-download text-xs"></i>
-                        </button>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="p-3 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-xl">
-                                <i class="fa-solid fa-file-word text-xl"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-slate-800 dark:text-white">Nota Dinas TPID</p>
-                                <p class="text-[10px] text-slate-400">DOCX &bull; Rekomendasi Kebijakan</p>
-                            </div>
-                        </div>
-                        <button class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition">
-                            <i class="fa-solid fa-download text-xs"></i>
-                        </button>
-                    </div>
-
-                    <div class="bg-white/90 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-md flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="p-3 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl">
-                                <i class="fa-solid fa-file-csv text-xl"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-slate-800 dark:text-white">Dataset Raw SP2KP</p>
-                                <p class="text-[10px] text-slate-400">CSV &bull; Integration Warehouse</p>
-                            </div>
-                        </div>
-                        <button class="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition">
-                            <i class="fa-solid fa-download text-xs"></i>
-                        </button>
-                    </div>
-                </div>
-
-            <!-- TAB 10: PENGATURAN AKUN -->
+                @include('dashboard.pages.laporan')
             @elseif ($currentTab === 'pengaturan')
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <!-- KIRI: INFORMASI PROFIL -->
-                    <div class="lg:col-span-4 space-y-6">
-                        <div class="bg-white/90 dark:bg-slate-800/90 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl text-center space-y-4">
-                            <div class="relative w-24 h-24 mx-auto">
-                                <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center font-black text-3xl shadow-xl border-4 border-white dark:border-slate-800">
-                                    <i class="fa-solid fa-user-shield"></i>
-                                </div>
-                                <button class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-full shadow-lg transition text-xs">
-                                    <i class="fa-solid fa-camera"></i>
-                                </button>
-                            </div>
-                            
-                            <div>
-                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Admin TPID Situbondo</h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">admin.tpid@situbondokab.go.id</p>
-                                <span class="inline-block mt-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-bold px-3 py-0.5 rounded-full">
-                                    Super Administrator TPID
-                                </span>
-                            </div>
-
-                            <div class="pt-4 border-t border-slate-100 dark:border-slate-700/60 text-left text-xs space-y-2 text-slate-600 dark:text-slate-300">
-                                <div class="flex justify-between">
-                                    <span class="text-slate-400">Instansi:</span>
-                                    <span class="font-semibold text-slate-800 dark:text-slate-200">Bagian Perekonomian Setda</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-slate-400">NIP:</span>
-                                    <span class="font-semibold text-slate-800 dark:text-slate-200">19850412 201001 1 008</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-slate-400">Terakhir Login:</span>
-                                    <span class="font-semibold text-slate-800 dark:text-slate-200">Hari ini, 08:15 WIB</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- KARTU PREFERENSI NOTIFIKASI -->
-                        <div class="bg-white/90 dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-3 text-xs">
-                            <h4 class="font-extrabold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-700/60 pb-2 flex items-center gap-2">
-                                <i class="fa-solid fa-bell text-amber-500"></i> Notifikasi Sektor Inflasi
-                            </h4>
-                            <div class="space-y-2">
-                                <label class="flex items-center justify-between cursor-pointer">
-                                    <span class="text-slate-700 dark:text-slate-300 font-semibold">Alert Email EWS Kenaikan Harga</span>
-                                    <input type="checkbox" checked class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                                </label>
-                                <label class="flex items-center justify-between cursor-pointer">
-                                    <span class="text-slate-700 dark:text-slate-300 font-semibold">Laporan Mingguan IPH Otomatis</span>
-                                    <input type="checkbox" checked class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- KANAN: FORM EDIT PROFIL -->
-                    <div class="lg:col-span-8 space-y-6">
-                        <div class="bg-white/90 dark:bg-slate-800/90 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl space-y-4">
-                            <div class="border-b border-slate-200 dark:border-slate-700 pb-3">
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <i class="fa-solid fa-user-pen text-blue-500"></i> Perbarui Data Profil Pengguna
-                                </h3>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400">Ubah informasi personal dan instansi akun penanggung jawab TPID</p>
-                            </div>
-
-                            <form action="#" method="POST" class="space-y-4 text-xs font-semibold">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Admin</label>
-                                        <input type="text" value="Admin TPID Situbondo" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-blue-500">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-700 dark:text-slate-300 mb-1">NIP / ID Pegawai</label>
-                                        <input type="text" value="19850412 201001 1 008" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-blue-500">
-                                    </div>
-                                </div>
-                                <div class="flex justify-end pt-2">
-                                    <button type="button" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl shadow-md transition flex items-center gap-1.5">
-                                        <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan Profil
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+                @include('dashboard.pages.pengaturan')
             @endif
 
         </main>
@@ -1336,6 +734,89 @@
             // Data riil dari MySQL hasil query Blade PHP
             const dbLabels = @json($dbChartLabels);
             const dbDatasets = @json($dbChartDatasets);
+            const dashboardFilterForm = document.getElementById('dashboardFilterForm');
+            const commodityFilter = document.getElementById('commodityFilter');
+            const dateFilterMarker = dashboardFilterForm
+                ? dashboardFilterForm.querySelector('[name="date_filter_applied"]')
+                : null;
+            const dateFilterInputs = dashboardFilterForm
+                ? Array.from(dashboardFilterForm.querySelectorAll('[data-date-filter]'))
+                : [];
+
+            dateFilterInputs.forEach(function(input) {
+                input.addEventListener('change', function() {
+                    input.dataset.changed = 'true';
+                });
+            });
+
+            if (commodityFilter && dashboardFilterForm) {
+                commodityFilter.addEventListener('change', function() {
+                    const query = new URLSearchParams(window.location.search);
+                    const hasNonDefaultDates = query.has('start_date') && query.has('end_date')
+                        && (query.get('start_date') !== @json($today->copy()->startOfMonth()->toDateString())
+                            || query.get('end_date') !== @json($today->toDateString()));
+                    const hasSubmittedDates = query.has('date_filter_applied') || hasNonDefaultDates;
+                    const hasChangedDates = dateFilterInputs.some(function(input) {
+                        return input.dataset.changed === 'true';
+                    });
+
+                    if (!hasSubmittedDates && !hasChangedDates) {
+                        dateFilterInputs.forEach(function(input) {
+                            input.disabled = true;
+                        });
+                        if (dateFilterMarker) {
+                            dateFilterMarker.disabled = true;
+                        }
+                    }
+
+                    dashboardFilterForm.requestSubmit();
+                });
+            }
+
+            const sekarkijangMonth = document.getElementById('sekarkijangMonth');
+            const sekarkijangWeek = document.getElementById('sekarkijangWeek');
+            const sekarkijangStartDate = document.getElementById('sekarkijangStartDate');
+            const sekarkijangEndDate = document.getElementById('sekarkijangEndDate');
+
+            if (sekarkijangMonth && sekarkijangWeek && sekarkijangStartDate && sekarkijangEndDate) {
+                const updateWeekAvailability = function() {
+                    const [year, month] = sekarkijangMonth.value.split('-').map(Number);
+                    const daysInMonth = new Date(year, month, 0).getDate();
+                    const fifthWeek = sekarkijangWeek.querySelector('option[value="5"]');
+                    fifthWeek.disabled = daysInMonth < 29;
+
+                    if (fifthWeek.disabled && sekarkijangWeek.value === '5') {
+                        sekarkijangWeek.value = 'all';
+                    }
+                };
+
+                const applySekarkijangDateFilter = function() {
+                    if (!sekarkijangMonth.value) return;
+
+                    updateWeekAvailability();
+
+                    const [year, month] = sekarkijangMonth.value.split('-').map(Number);
+                    const daysInMonth = new Date(year, month, 0).getDate();
+                    const week = sekarkijangWeek.value || 'all';
+                    const startDay = week === 'all' ? 1 : (Number(week) - 1) * 7 + 1;
+                    const endDay = week === 'all' ? daysInMonth : Math.min(Number(week) * 7, daysInMonth);
+
+                    if (startDay > daysInMonth) return;
+
+                    const monthValue = String(month).padStart(2, '0');
+                    sekarkijangStartDate.value = `${year}-${monthValue}-${String(startDay).padStart(2, '0')}`;
+                    sekarkijangEndDate.value = `${year}-${monthValue}-${String(endDay).padStart(2, '0')}`;
+                    sekarkijangWeek.value = week;
+                    sekarkijangStartDate.form.requestSubmit();
+                };
+
+                sekarkijangMonth.addEventListener('change', function() {
+                    if (!sekarkijangWeek.value) sekarkijangWeek.value = 'all';
+                    applySekarkijangDateFilter();
+                });
+                sekarkijangWeek.addEventListener('change', applySekarkijangDateFilter);
+                updateWeekAvailability();
+            }
 
             const commonChartConfig = {
                 type: 'line',
@@ -1460,11 +941,53 @@
                     }
                 ];
 
-                new Chart(ctxInterRegion.getContext('2d'), {
+                const interRegionMonthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov'];
+                const monthStartFilter = document.getElementById('iphMonthStart');
+                const monthEndFilter = document.getElementById('iphMonthEnd');
+                const buildWeeklyIphData = function(startMonth, endMonth) {
+                    const labels = [];
+                    const datasets = interRegionDatasets.map(function(dataset) {
+                        return { ...dataset, data: [] };
+                    });
+
+                    for (let monthIndex = startMonth; monthIndex <= endMonth; monthIndex++) {
+                        const weekCount = Math.ceil(new Date(2026, monthIndex + 1, 0).getDate() / 7);
+                        const monthLabel = interRegionMonthLabels[monthIndex];
+
+                        labels.push(...Array.from(
+                            { length: weekCount },
+                            function(_, weekIndex) {
+                                return 'Minggu ' + (weekIndex + 1) + ' ' + monthLabel;
+                            }
+                        ));
+
+                        datasets.forEach(function(dataset, datasetIndex) {
+                            const sourceDataset = interRegionDatasets[datasetIndex];
+                            const currentValue = sourceDataset.data[monthIndex];
+                            const previousValue = monthIndex === 0
+                                ? currentValue
+                                : sourceDataset.data[monthIndex - 1];
+
+                            for (let weekIndex = 1; weekIndex <= weekCount; weekIndex++) {
+                                const progress = weekIndex / weekCount;
+                                datasets[datasetIndex].data.push(
+                                    Number((previousValue + (currentValue - previousValue) * progress).toFixed(2))
+                                );
+                            }
+                        });
+                    }
+
+                    return { labels: labels, datasets: datasets };
+                };
+                const initialWeeklyIphData = buildWeeklyIphData(
+                    Number(monthStartFilter.value),
+                    Number(monthEndFilter.value)
+                );
+                const interRegionChart = new Chart(ctxInterRegion.getContext('2d'), {
                     type: 'line',
                     data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov'],
-                        datasets: interRegionDatasets
+                        labels: initialWeeklyIphData.labels,
+                        datasets: initialWeeklyIphData.datasets
                     },
                     options: {
                         responsive: true,
@@ -1507,111 +1030,152 @@
                         }
                     }
                 });
+
+                const applyInterRegionMonthFilter = function(changedFilter) {
+                    if (Number(monthStartFilter.value) > Number(monthEndFilter.value)) {
+                        if (changedFilter === monthStartFilter) {
+                            monthEndFilter.value = monthStartFilter.value;
+                        } else {
+                            monthStartFilter.value = monthEndFilter.value;
+                        }
+                    }
+
+                    const start = Number(monthStartFilter.value);
+                    const end = Number(monthEndFilter.value);
+                    const weeklyIphData = buildWeeklyIphData(start, end);
+
+                    interRegionChart.data.labels = weeklyIphData.labels;
+                    interRegionChart.data.datasets = weeklyIphData.datasets;
+                    interRegionChart.update();
+                };
+
+                monthStartFilter.addEventListener('change', function() {
+                    applyInterRegionMonthFilter(monthStartFilter);
+                });
+                monthEndFilter.addEventListener('change', function() {
+                    applyInterRegionMonthFilter(monthEndFilter);
+                });
             }
 
-            // Render GRAFIK LINE CHART Pergerakan Harga Harian Antar 7 Kabupaten/Kota Sekarkijang
-            const ctxSekarkijangLine = document.getElementById('sekarkijangDailyLineChart');
-            if (ctxSekarkijangLine) {
-                @php
-                    $activeItemName = $activeComparisonCommodity['name'];
-                    $basePriceSitubondo = $activeComparisonCommodity['prices_sekarkijang']['Situbondo'];
-                    $basePriceJember = $activeComparisonCommodity['prices_sekarkijang']['Jember'];
-                    $basePriceBanyuwangi = $activeComparisonCommodity['prices_sekarkijang']['Banyuwangi'];
-                    $basePriceBondowoso = $activeComparisonCommodity['prices_sekarkijang']['Bondowoso'];
-                    $basePriceLumajang = $activeComparisonCommodity['prices_sekarkijang']['Lumajang'];
-                    $basePriceKabProbolinggo = $activeComparisonCommodity['prices_sekarkijang']['Kab_Probolinggo'];
-                    $basePriceKotaProbolinggo = $activeComparisonCommodity['prices_sekarkijang']['Kota_Probolinggo'];
-                @endphp
+            const ctxIphWeekly = document.getElementById('iphWeeklyChart');
+            if (ctxIphWeekly) {
+                const iphWeeklyRows = @json($iphWeeklySummary);
+                const iphWeekLabels = @json($iphWeekColumns).map(function(label) {
+                    return label.replace('September', 'Sep').replace('Oktober', 'Okt');
+                });
+                const iphSeriesColors = {
+                    '3512': '#4472c4',
+                    '3511': '#c0504d',
+                    '3510': '#9bbb59',
+                    '3509': '#8064a2',
+                    '3513': '#4bacc6',
+                    '3574': '#f79646',
+                    '3508': '#95b3d7'
+                };
+                const iphWeeklyDatasets = iphWeeklyRows
+                    .filter(function(row) {
+                        return row.type !== 'Pembanding';
+                    })
+                    .map(function(row) {
+                        const color = iphSeriesColors[row.code];
+                        return {
+                            label: row.name,
+                            data: row.values,
+                            borderColor: color,
+                            backgroundColor: color,
+                            pointBackgroundColor: color,
+                            pointBorderColor: color,
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            tension: 0
+                        };
+                    });
 
-                const activeCommodityName = @json($activeItemName);
-                const dailyLabels = dbLabels.length > 0 ? dbLabels : ['1 Okt', '5 Okt', '10 Okt', '15 Okt', '20 Okt', '25 Okt', '27 Okt'];
-
-                // Fungsi membuat variasi tren harga harian per kota
-                function generateDailySeries(basePrice, variance) {
-                    const count = dailyLabels.length;
-                    const series = [];
-                    for (let i = 0; i < count; i++) {
-                        const delta = (i % 2 === 0 ? 1 : -1) * (i * variance);
-                        series.push(basePrice + delta);
-                    }
-                    return series;
-                }
-
-                const sekarkijangDailyDatasets = [
-                    {
-                        label: 'Situbondo',
-                        data: generateDailySeries(@json($basePriceSitubondo), 200),
-                        borderColor: '#3b82f6',
-                        backgroundColor: '#3b82f6',
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Jember',
-                        data: generateDailySeries(@json($basePriceJember), 250),
-                        borderColor: '#f59e0b',
-                        backgroundColor: '#f59e0b',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Banyuwangi',
-                        data: generateDailySeries(@json($basePriceBanyuwangi), 180),
-                        borderColor: '#10b981',
-                        backgroundColor: '#10b981',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Bondowoso',
-                        data: generateDailySeries(@json($basePriceBondowoso), 150),
-                        borderColor: '#06b6d4',
-                        backgroundColor: '#06b6d4',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Lumajang',
-                        data: generateDailySeries(@json($basePriceLumajang), 120),
-                        borderColor: '#8b5cf6',
-                        backgroundColor: '#8b5cf6',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Kab. Probolinggo',
-                        data: generateDailySeries(@json($basePriceKabProbolinggo), 220),
-                        borderColor: '#ec4899',
-                        backgroundColor: '#ec4899',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Kota Probolinggo',
-                        data: generateDailySeries(@json($basePriceKotaProbolinggo), 100),
-                        borderColor: '#64748b',
-                        backgroundColor: '#64748b',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        tension: 0.3
-                    }
-                ];
-
-                new Chart(ctxSekarkijangLine.getContext('2d'), {
+                new Chart(ctxIphWeekly.getContext('2d'), {
                     type: 'line',
                     data: {
-                        labels: dailyLabels,
-                        datasets: sekarkijangDailyDatasets
+                        labels: iphWeekLabels,
+                        datasets: iphWeeklyDatasets
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: ctxIphWeekly.parentElement.clientWidth < 900 ? 'bottom' : 'right',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 14,
+                                    color: isDark ? '#cbd5e1' : '#334155',
+                                    font: { size: 11 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + Number(context.raw).toLocaleString('id-ID', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        }) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Periode Minggu',
+                                    color: isDark ? '#cbd5e1' : '#334155',
+                                    font: { weight: 'bold' }
+                                },
+                                grid: { color: isDark ? '#334155' : '#e2e8f0' },
+                                ticks: {
+                                    color: isDark ? '#94a3b8' : '#475569',
+                                    font: { size: 10 }
+                                }
+                            },
+                            y: {
+                                min: 0,
+                                max: 1.8,
+                                title: {
+                                    display: true,
+                                    text: 'Perubahan IPH (%)',
+                                    color: isDark ? '#cbd5e1' : '#334155',
+                                    font: { weight: 'bold' }
+                                },
+                                grid: { color: isDark ? '#334155' : '#9ca3af' },
+                                ticks: {
+                                    stepSize: 0.2,
+                                    callback: function(value) {
+                                        return Number(value).toLocaleString('id-ID', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        });
+                                    },
+                                    color: isDark ? '#94a3b8' : '#475569',
+                                    font: { size: 10 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const ctxSekarkijangRegionComparison = document.getElementById('sekarkijangRegionComparisonChart');
+            if (ctxSekarkijangRegionComparison) {
+                new Chart(ctxSekarkijangRegionComparison.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: @json($sekarkijangComparisonLabels),
+                        datasets: @json($sekarkijangComparisonDatasets)
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: {
                                 display: true,
@@ -1626,7 +1190,7 @@
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
-                                        return context.dataset.label + ': Rp ' + context.raw.toLocaleString('id-ID');
+                                        return context.dataset.label + ': Rp ' + Number(context.raw).toLocaleString('id-ID');
                                     }
                                 }
                             }
@@ -1634,12 +1198,19 @@
                         scales: {
                             x: {
                                 grid: { color: isDark ? '#334155' : '#e2e8f0' },
-                                ticks: { color: isDark ? '#94a3b8' : '#475569', font: { size: 10, weight: 'bold' } }
+                                ticks: {
+                                    color: isDark ? '#94a3b8' : '#475569',
+                                    font: { size: 9, weight: 'bold' },
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
                             },
                             y: {
                                 grid: { color: isDark ? '#334155' : '#e2e8f0' },
                                 ticks: {
-                                    callback: function(val) { return 'Rp ' + val.toLocaleString('id-ID'); },
+                                    callback: function(value) {
+                                        return 'Rp ' + Number(value).toLocaleString('id-ID');
+                                    },
                                     color: isDark ? '#94a3b8' : '#475569',
                                     font: { size: 10, weight: 'bold' }
                                 }
@@ -1652,14 +1223,13 @@
             // Render Chart Analisis & Prediksi AI
             const ctxPrediksi = document.getElementById('chartPrediksiAnalisis');
             if (ctxPrediksi) {
-                const actualData = dbDatasets[0] ? dbDatasets[0].data : [];
                 new Chart(ctxPrediksi.getContext('2d'), {
                     type: 'line',
                     data: {
-                        labels: dbLabels,
+                        labels: @json($analysisChartLabels),
                         datasets: [
-                            { label: 'Harga Aktual Real (Pasar Panji)', data: actualData, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.3 },
-                            { label: 'Proyeksi AI (HBKN)', data: dbLabels.map((_, i) => 62000 + (i * 300)), borderColor: '#f59e0b', borderDash: [5, 5], tension: 0.3 }
+                            { label: 'Harga Aktual Real (Pasar Panji)', data: @json($analysisActualPrices), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.3 },
+                            { label: @json($analysisRun?->model_name ?? 'Proyeksi'), data: @json($analysisForecastPrices), borderColor: '#f59e0b', borderDash: [5, 5], tension: 0.3 }
                         ]
                     },
                     options: commonChartConfig.options
@@ -1667,15 +1237,40 @@
             }
 
             // Render Leaflet Map (Khusus untuk Tab Monitoring Pasar)
-            const situbondoMarkets = @json($situbondoMarketsList);
+            const situbondoMarkets = @json($situbondoVerifiedMarkets);
 
             const mapEl = document.getElementById('map');
             if (mapEl) {
                 const map = L.map('map').setView([-7.7025, 113.9922], 10);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                situbondoMarkets.forEach(m => {
-                    L.marker([m.lat, m.lng]).addTo(map).bindPopup(`<b>${m.name}</b><br>Kecamatan: ${m.district}`);
+                const marketBounds = [];
+                situbondoMarkets.forEach(function(market) {
+                    if (!market.location_verified || !Number.isFinite(market.lat) || !Number.isFinite(market.lng)) return;
+
+                    const marker = L.marker([market.lat, market.lng]).addTo(map);
+                    const popup = document.createElement('div');
+                    const name = document.createElement('strong');
+                    name.textContent = market.name;
+                    const address = document.createElement('div');
+                    address.textContent = market.address || `Kecamatan ${market.district}`;
+                    popup.append(name, address);
+
+                    if (market.source_url) {
+                        const source = document.createElement('a');
+                        source.href = market.source_url;
+                        source.target = '_blank';
+                        source.rel = 'noopener noreferrer';
+                        source.textContent = 'Sumber: OpenStreetMap';
+                        popup.append(document.createElement('br'), source);
+                    }
+
+                    marker.bindPopup(popup);
+                    marketBounds.push([market.lat, market.lng]);
                 });
+
+                if (marketBounds.length > 0) {
+                    map.fitBounds(marketBounds, { padding: [24, 24], maxZoom: 12 });
+                }
             }
         });
     </script>

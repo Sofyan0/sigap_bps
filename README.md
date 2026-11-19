@@ -87,7 +87,7 @@ Ekstrak isi ZIP ini ke folder proyek `sigap-situbondo`, lalu izinkan penimpaan f
 
 ## 2. Siapkan database
 
-Buat database MySQL, misalnya `sigap_situbondo`, lalu salin `.env.example.sigap` ke referensi konfigurasi Anda atau salin nilai-nilainya ke `.env` proyek Laravel:
+Buat database MySQL, misalnya `sigap_situbondo`, lalu atur koneksi pada `.env` proyek Laravel:
 
 ```env
 DB_CONNECTION=mysql
@@ -111,18 +111,25 @@ SIGAP_SYNC_ENABLED=false
 ```bash
 php artisan key:generate
 php artisan migrate
+php artisan db:seed --class=EwsAssessmentSeeder
 php artisan serve
 ```
 
 Buka `http://127.0.0.1:8000`.
 
-Opsional, masukkan data contoh untuk menguji tampilan:
+Migration menyiapkan tabel `harga_pasar`, master pasar `markets`, riwayat EWS, serta `analysis_runs` dan `analysis_forecasts` untuk menyimpan hasil model, ringkasan, dan proyeksi per komoditas/tanggal. Jalankan `php artisan db:seed --class=MarketSeeder` untuk mengisi daftar awal pasar Situbondo; seeder dapat dijalankan ulang dan mempertahankan kode pasar yang sama. Halaman Analisis hanya menampilkan proyeksi yang tersimpan; bila belum ada hasil model, proyeksi ditandai belum tersedia dan grafik tetap menggunakan riwayat harga aktual.
+
+Halaman Pengaturan menyimpan profil admin dan preferensi notifikasi pada satu baris `dashboard_settings`; jalankan `php artisan db:seed --class=DashboardSettingsSeeder` untuk membuat nilai awal tanpa menimpa perubahan yang sudah disimpan. Halaman ini menyimpan preferensi saja, belum mengirim email otomatis atau mencatat sesi login.
+
+Seeder EWS mengisi data contoh agar halaman bisa langsung diuji; ganti dengan data aktual sebelum dipakai untuk keputusan operasional.
+
+Opsional, impor data harga dari berkas Excel yang tersedia:
 
 ```bash
-php artisan db:seed --class=SigapDemoSeeder
+php artisan db:seed --class=PasarPanjiSeeder
 ```
 
-Data seeder hanyalah data demo dan bukan harga resmi.
+Data impor perlu diverifikasi terhadap sumber resmi sebelum digunakan.
 
 ## 4. Cara format data API pusat
 
