@@ -5,20 +5,27 @@ namespace Tests\Feature;
 use App\Models\AnalysisRun;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
 
-class AnalysisDashboardTest extends TestCase
+class AnalysisDashboardTest extends DashboardTestCase
 {
     use RefreshDatabase;
 
     public function test_analysis_page_reads_saved_model_results_and_forecasts(): void
     {
-        DB::table('harga_pasar')->insert([
+        DB::table('monitoring_sp2kp_prices')->insert([
             [
-                'nama_pasar' => 'Pasar Panji',
-                'nama_barang' => 'Cabe Rawit Merah',
-                'harga' => 62000,
-                'tanggal_dibuat' => '2026-10-27',
+                'market_name' => 'Situbondo',
+                'commodity_name' => 'Cabai Rawit Merah',
+                'unit' => 'kg',
+                'price' => 57000,
+                'price_date' => '2026-11-01',
+            ],
+            [
+                'market_name' => 'Situbondo',
+                'commodity_name' => 'Cabai Rawit Merah',
+                'unit' => 'kg',
+                'price' => 62000,
+                'price_date' => '2026-11-02',
             ],
         ]);
 
@@ -43,10 +50,14 @@ class AnalysisDashboardTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Model Uji')
+            ->assertSee('Analisis Harga Komoditas SP2KP')
+            ->assertSee('Cabai Rawit Merah')
             ->assertSee('91,3%')
             ->assertSee('03 Nov 2026')
             ->assertSee('0,35%')
             ->assertSee('Insight dari database')
+            ->assertSee('"Harga Aktual SP2KP - Situbondo"', false)
+            ->assertSee('const analysisActualPrices = [57000,62000,null]', false)
             ->assertSee('65000');
     }
 
@@ -57,6 +68,8 @@ class AnalysisDashboardTest extends TestCase
         $response->assertOk()
             ->assertSee('Belum ada hasil evaluasi')
             ->assertSee('Belum ada insight analisis yang tersimpan.')
+            ->assertSee('Analisis Harga Komoditas SP2KP')
+            ->assertSee('Harga Aktual SP2KP - Situbondo')
             ->assertDontSee('Random Forest / KNN')
             ->assertDontSee('94,2%');
     }

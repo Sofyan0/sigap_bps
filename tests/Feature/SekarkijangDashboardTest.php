@@ -4,9 +4,8 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
 
-class SekarkijangDashboardTest extends TestCase
+class SekarkijangDashboardTest extends DashboardTestCase
 {
     use RefreshDatabase;
 
@@ -60,7 +59,7 @@ class SekarkijangDashboardTest extends TestCase
             ->assertSee('"16 Nov"', false);
     }
 
-    public function test_sekarkijang_compares_region_prices_with_sp2kp_simulation(): void
+    public function test_sekarkijang_compares_region_prices_using_actual_data_sources(): void
     {
         $records = [];
         for ($index = 1; $index <= 21; $index++) {
@@ -90,16 +89,16 @@ class SekarkijangDashboardTest extends TestCase
         $response->assertOk()
             ->assertSee('Perbandingan Harga Antar Kabupaten/Kota Sekarkijang - SP2KP')
             ->assertSee('id="sekarkijangRegionComparisonChart"', false)
-            ->assertSee('Kabupaten Situbondo (Pasar Panji +2%)')
+            ->assertSee('Kabupaten Situbondo (Pasar Panji)')
             ->assertSee('Kabupaten Banyuwangi')
-            ->assertSee('Situbondo menampilkan harga rata-rata Pasar Panji dengan penyesuaian simulasi +2%.')
+            ->assertSee('Situbondo menampilkan data Pasar Panji.')
             ->assertSee('Komoditas 21')
             ->assertSee('26 Oct')
             ->assertSee('27 Oct')
             ->assertSee('<option value="Komoditas 21" selected>Komoditas 21</option>', false)
             ->assertDontSee('20 Komoditas dengan Harga Tertinggi di Pasar Panji')
             ->assertDontSee('<table class="w-full min-w-[520px] text-xs">', false)
-            ->assertDontSee('dummy')
+            ->assertDontSee('simulasi')
             ->assertDontSee('generateDailySeries', false);
     }
 
@@ -108,7 +107,7 @@ class SekarkijangDashboardTest extends TestCase
         $response = $this->get('/?tab=sekarkijang&start_date=2026-01-01&end_date=2026-01-03');
 
         $response->assertOk()
-            ->assertSee('Belum ada data harga untuk komoditas ini sebagai dasar perbandingan.')
+            ->assertSee('Belum ada data harga untuk komoditas ini. Unggah file Excel wilayah atau pastikan data SP2KP Situbondo tersedia.')
             ->assertDontSee('id="sekarkijangRegionComparisonChart"', false);
     }
 }

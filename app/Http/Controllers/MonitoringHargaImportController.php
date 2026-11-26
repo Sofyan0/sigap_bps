@@ -11,6 +11,15 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as SpreadsheetDate;
 
 class MonitoringHargaImportController extends Controller
 {
+    private const SEKARKIJANG_REGIONS = [
+        '3511' => 'Kabupaten Bondowoso',
+        '3510' => 'Kabupaten Banyuwangi',
+        '3509' => 'Kabupaten Jember',
+        '3513' => 'Kabupaten Probolinggo',
+        '3574' => 'Kota Probolinggo',
+        '3508' => 'Kabupaten Lumajang',
+    ];
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -54,6 +63,56 @@ class MonitoringHargaImportController extends Controller
         ])->with('success', count($rows).' data harga berhasil diimpor.');
     }
 
+    public function storeRegion(Request $request)
+    {
+        $validated = $request->validate([
+            'region_code' => 'required|in:'.implode(',', array_keys(self::SEKARKIJANG_REGIONS)),
+            'excel_file' => 'required|file|mimes:csv,txt,xls,xlsx|max:10240',
+        ]);
+
+        $upload = $request->file('excel_file');
+        $regionName = self::SEKARKIJANG_REGIONS[$validated['region_code']];
+        $rows = $this->parseUpload(
+            $upload->getRealPath(),
+            'sp2kp',
+            strtolower($upload->getClientOriginalExtension()),
+            $regionName
+        );
+        if ($rows === []) {
+            throw ValidationException::withMessages([
+                'excel_file' => 'Tidak ditemukan data harga valid pada berkas yang diunggah.',
+            ]);
+        }
+
+        $regionRows = array_map(function ($row) use ($validated, $regionName) {
+            return $row + [
+                'region_code' => $validated['region_code'],
+                'region_name' => $regionName,
+            ];
+        }, $rows);
+
+        DB::transaction(function () use ($regionRows) {
+            foreach (array_chunk($regionRows, 500) as $chunk) {
+                DB::table('sekarkijang_region_prices')->upsert(
+                    $chunk,
+                    ['region_code', 'market_name', 'commodity_name', 'price_date'],
+                    ['region_name', 'unit', 'price', 'updated_at']
+                );
+            }
+        });
+
+        $dates = array_column($rows, 'price_date');
+        sort($dates);
+
+        return redirect()->route('dashboard', [
+            'tab' => 'sekarkijang',
+            'start_date' => $dates[0],
+            'end_date' => end($dates),
+            'date_filter_applied' => 1,
+            'sekarkijang_commodity' => $rows[0]['commodity_name'],
+        ])->with('success', count($rows).' data harga '.$regionName.' berhasil diimpor.');
+    }
+
     private function pricesTable(string $source): string
     {
         return $source === 'sp2kp'
@@ -61,7 +120,7 @@ class MonitoringHargaImportController extends Controller
             : 'monitoring_sikepo_prices';
     }
 
-    private function parseUpload(string $path, string $source, string $extension): array
+    private function parseUpload(string $path, string $source, string $extension, ?string $defaultMarket = null): array
     {
         $sheetRows = in_array($extension, ['csv', 'txt'], true)
             ? $this->readCsvRows($path)
@@ -81,7 +140,7 @@ class MonitoringHargaImportController extends Controller
         $records = [];
 
         if ($this->hasLongFormatColumns($header['headers'])) {
-            $records = $this->parseLongFormat($header['headers'], $sheetRows, $source);
+            $records = $this->parseLongFormat($header['headers'], $sheetRows, $source, $defaultMarket);
         } elseif ($source === 'sp2kp') {
             if ($this->hasSp2kpReportColumns($header['headers'])) {
                 $reportDate = $this->findSp2kpReportDate($metadataRows);
@@ -91,9 +150,9 @@ class MonitoringHargaImportController extends Controller
                     ]);
                 }
 
-                $records = $this->parseSp2kpReportFormat($header['headers'], $sheetRows, $reportDate);
+                $records = $this->parseSp2kpReportFormat($header['headers'], $sheetRows, $reportDate, $defaultMarket);
             } else {
-                $records = $this->parseWideSp2kpFormat($header['row'], $sheetRows);
+                $records = $this->parseWideSp2kpFormat($header['row'], $sheetRows, $defaultMarket);
             }
         } else {
             throw ValidationException::withMessages([
@@ -184,7 +243,7 @@ class MonitoringHargaImportController extends Controller
         return $dates === [] ? null : end($dates);
     }
 
-    private function parseSp2kpReportFormat(array $headers, array $rows, string $reportDate): array
+    private function parseSp2kpReportFormat(array $headers, array $rows, string $reportDate, ?string $defaultMarket = null): array
     {
         $nameIndex = $this->findCommodityHeaderIndex($headers);
         $priceIndex = $this->findHeaderIndex($headers, ['harga', 'price']);
@@ -205,7 +264,7 @@ class MonitoringHargaImportController extends Controller
             }
 
             $unit = $unitIndex === null ? '' : trim((string) ($row[$unitIndex] ?? ''));
-            $this->addRecord($records, 'sp2kp', $commodity, $unit, $price, $reportDate, 'Situbondo');
+            $this->addRecord($records, 'sp2kp', $commodity, $unit, $price, $reportDate, $defaultMarket ?? 'Situbondo');
         }
 
         return $records;
@@ -242,7 +301,7 @@ class MonitoringHargaImportController extends Controller
         }
     }
 
-    private function parseLongFormat(array $headers, array $rows, string $source): array
+    private function parseLongFormat(array $headers, array $rows, string $source, ?string $defaultMarket = null): array
     {
         $nameIndex = $this->findCommodityHeaderIndex($headers);
         $priceIndex = $this->findHeaderIndex($headers, ['harga', 'price']);
@@ -267,13 +326,13 @@ class MonitoringHargaImportController extends Controller
 
             $unit = trim((string) ($unitIndex === null ? '' : ($row[$unitIndex] ?? '')));
             $market = trim((string) ($marketIndex === null ? '' : ($row[$marketIndex] ?? '')));
-            $this->addRecord($records, $source, $commodity, $unit, $price, $date, $market);
+            $this->addRecord($records, $source, $commodity, $unit, $price, $date, $market, $defaultMarket);
         }
 
         return $records;
     }
 
-    private function parseWideSp2kpFormat(array $headerRow, array $rows): array
+    private function parseWideSp2kpFormat(array $headerRow, array $rows, ?string $defaultMarket = null): array
     {
         $headers = array_map(fn ($value) => $this->normalizeHeader($value), $headerRow);
         $nameIndex = $this->findCommodityHeaderIndex($headers);
@@ -313,16 +372,25 @@ class MonitoringHargaImportController extends Controller
                 }
 
                 $unit = $unitIndex === null ? '' : trim((string) ($row[$unitIndex] ?? ''));
-                $this->addRecord($records, 'sp2kp', $commodity, $unit, $price, $date, 'Situbondo');
+                $this->addRecord($records, 'sp2kp', $commodity, $unit, $price, $date, $defaultMarket ?? 'Situbondo');
             }
         }
 
         return $records;
     }
 
-    private function addRecord(array &$records, string $source, string $commodity, string $unit, float $price, string $date, string $market): void
+    private function addRecord(
+        array &$records,
+        string $source,
+        string $commodity,
+        string $unit,
+        float $price,
+        string $date,
+        string $market,
+        ?string $defaultMarket = null
+    ): void
     {
-        $market = $market !== '' ? $market : ($source === 'sikeppo' ? 'Pasar Rakyat Panji' : 'Situbondo');
+        $market = $market !== '' ? $market : ($defaultMarket ?? ($source === 'sikeppo' ? 'Pasar Rakyat Panji' : 'Situbondo'));
         $key = implode('|', [$market, $commodity, $date]);
         $records[$key] = [
             'market_name' => $market,

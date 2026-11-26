@@ -4,9 +4,8 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
 
-class MarketMonitoringTest extends TestCase
+class MarketMonitoringTest extends DashboardTestCase
 {
     use RefreshDatabase;
 
@@ -57,6 +56,7 @@ class MarketMonitoringTest extends TestCase
         $response = $this->get('/?tab=monitoring_pasar');
 
         $response->assertOk()
+            ->assertDontSee('id="dashboardFilterForm"', false)
             ->assertSee('2 Pasar Rakyat')
             ->assertSee('1 Pasar')
             ->assertSee('Pasar Uji Panji')

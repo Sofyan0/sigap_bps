@@ -41,7 +41,8 @@
     @php
         $currentTab = $activeTab ?? request()->query('tab', 'beranda');
         $curRegion = $selectedRegion ?? request()->query('region', 'Situbondo');
-        $dataSource = request()->query('source', 'sikeppo'); // sikeppo atau sp2kp
+        $usingSp2kpData = in_array($currentTab, ['ews', 'stok', 'intervensi', 'analisis', 'laporan'], true);
+        $dataSource = $usingSp2kpData ? 'sp2kp' : request()->query('source', 'sikeppo');
         $sourceDisplayName = $dataSource === 'sp2kp' ? 'SP2KP' : 'SIKEPO';
         
         $today = \Carbon\Carbon::today();
@@ -247,11 +248,11 @@
 
         $rawDbData = $usingSpreadsheetMonitoringData
             ? ($usingSp2kpMonitoringData ? $sp2kpChartData : $sikepoChartData)
-            : (in_array($currentTab, ['beranda', 'monitoring_harga'], true)
+            : ($currentTab === 'monitoring_harga'
                 ? $query->orderBy('tanggal_dibuat', 'asc')->get()
                 : collect());
         $chartSeedPrices = collect();
-        if (in_array($currentTab, ['beranda', 'monitoring_harga'], true) && ! $usingSpreadsheetMonitoringData) {
+        if ($currentTab === 'monitoring_harga' && ! $usingSpreadsheetMonitoringData) {
             $latestPriceDates = \Illuminate\Support\Facades\DB::table('harga_pasar')
                 ->select('nama_barang', \Illuminate\Support\Facades\DB::raw('MAX(tanggal_dibuat) as tanggal_dibuat'))
                 ->where('nama_pasar', 'LIKE', '%Panji%')
@@ -433,14 +434,21 @@
         }
 
         // Ambil daftar unik komoditas dari database MySQL untuk dropdown filter
-        $dbCommodityOptions = $usingSp2kpMonitoringData
-            ? $sp2kpCommodityOptions
-            : ($usingSikepoMonitoringData
-                ? $sikepoCommodityOptions
-                : \Illuminate\Support\Facades\DB::table('harga_pasar')
-                ->where('nama_pasar', 'LIKE', '%Panji%')
-                ->distinct()
-                ->pluck('nama_barang'));
+        $dbCommodityOptions = $usingSp2kpData
+            ? match ($currentTab) {
+                'ews' => $ewsCommodityOptions,
+                'stok' => $stockCommodityOptions,
+                'intervensi' => $interventionCommodityOptions,
+                default => $analysisCommodityOptions,
+            }
+            : ($usingSp2kpMonitoringData
+                ? $sp2kpCommodityOptions
+                : ($usingSikepoMonitoringData
+                    ? $sikepoCommodityOptions
+                    : \Illuminate\Support\Facades\DB::table('harga_pasar')
+                        ->where('nama_pasar', 'LIKE', '%Panji%')
+                        ->distinct()
+                        ->pluck('nama_barang')));
     @endphp
 
     <!-- SIDEBAR NAVIGATION -->
@@ -541,11 +549,6 @@
 
                 <div class="pt-2 border-t border-slate-800/80 my-2"></div>
 
-                <a href="{{ Route::has('kelola-data') ? route('kelola-data') : '#' }}" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all text-amber-400 hover:bg-slate-800/60">
-                    <i class="fa-solid fa-database text-sm w-5"></i>
-                    <span>Master Data &amp; Excel</span>
-                </a>
-
                 <a href="?tab=pengaturan" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all {{ $currentTab === 'pengaturan' ? 'bg-blue-600 text-white font-bold shadow-lg shadow-blue-600/30' : 'hover:bg-slate-800/60 text-slate-400 hover:text-white' }}">
                     <i class="fa-solid fa-gear text-sm w-5"></i>
                     <span>Pengaturan Akun</span>
@@ -576,7 +579,7 @@
                     @if($currentTab === 'pengaturan')
                         <i class="fa-solid fa-user-gear text-blue-500"></i> Pengaturan Akun &amp; Profil Pengguna TPID
                     @elseif($currentTab === 'laporan')
-                        <i class="fa-solid fa-file-invoice text-blue-500"></i> Pusat Laporan Eksekutif &amp; Export Data SP2KP
+                        <i class="fa-solid fa-file-invoice text-blue-500"></i> Laporan Harga SP2KP yang Perlu Ditinjau
                     @elseif($currentTab === 'analisis')
                         <i class="fa-solid fa-chart-pie text-blue-500"></i> Analisis &amp; Prediksi Harga AI/Machine Learning
                     @elseif($currentTab === 'intervensi')
@@ -600,6 +603,7 @@
             <!-- RIGHT CONTAINER: FILTER FORM & ADMIN PROFILE DROPDOWN -->
             <div class="flex flex-wrap items-center gap-3">
                 
+                @if(! in_array($currentTab, ['pengaturan', 'laporan', 'monitoring_pasar'], true))
                 <!-- GLOBAL FILTER BAR -->
                 <form id="dashboardFilterForm" method="GET" action="{{ url('/') }}" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="tab" value="{{ $currentTab }}">
@@ -607,9 +611,15 @@
                     <input type="hidden" name="date_filter_applied" value="1">
                     
                     <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1">
-                        <label for="region" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Pasar:</label>
+                        <label for="region" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{{ $usingSp2kpData ? 'Wilayah SP2KP:' : 'Pasar:' }}</label>
                         <select id="region" name="region" class="bg-transparent text-xs font-bold text-slate-800 dark:text-white focus:outline-none cursor-pointer">
-                            <option value="Panji" selected class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Pasar Rakyat Panji</option>
+                            @if($usingSp2kpData)
+                                @foreach($ewsMarketOptions as $marketName)
+                                    <option value="{{ $marketName }}" {{ $curRegion === $marketName ? 'selected' : '' }} class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{{ $marketName }}</option>
+                                @endforeach
+                            @else
+                                <option value="Panji" selected class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">Pasar Rakyat Panji</option>
+                            @endif
                         </select>
                     </div>
 
@@ -639,6 +649,7 @@
 
                 <!-- ELEMEN SEPARATOR -->
                 <div class="hidden sm:block h-6 w-px bg-slate-300 dark:bg-slate-700"></div>
+                @endif
 
                 <!-- ADMIN TPID PROFILE DROPDOWN -->
                 <div x-data="{ open: false }" class="relative">
@@ -646,7 +657,7 @@
                         <div class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-[11px] shadow">
                             <i class="fa-solid fa-user"></i>
                         </div>
-                        <span class="font-bold text-slate-900 dark:text-white">Admin TPID</span>
+                        <span class="max-w-[120px] truncate font-bold text-slate-900 dark:text-white">{{ auth()->user()->name }}</span>
                         <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
                     </button>
 
@@ -660,16 +671,19 @@
                          class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-1.5 z-50 text-xs font-semibold" 
                          style="display: none;">
                         <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700/60">
-                            <p class="text-slate-900 dark:text-white font-extrabold truncate">Admin TPID Situbondo</p>
-                            <p class="text-[10px] text-slate-400 truncate">admin.tpid@situbondokab.go.id</p>
+                            <p class="text-slate-900 dark:text-white font-extrabold truncate">{{ auth()->user()->name }}</p>
+                            <p class="text-[10px] text-slate-400 truncate">{{ auth()->user()->email }}</p>
                         </div>
                         <a href="?tab=pengaturan" class="flex items-center gap-2.5 px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
                             <i class="fa-solid fa-user-gear text-blue-500 w-4"></i> Pengaturan Akun
                         </a>
                         <div class="my-1 border-t border-slate-100 dark:border-slate-700/60"></div>
-                        <a href="#" class="flex items-center gap-2.5 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition">
-                            <i class="fa-solid fa-right-from-bracket w-4"></i> Keluar (Logout)
-                        </a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2 text-left text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30">
+                                <i class="fa-solid fa-right-from-bracket w-4"></i> Keluar (Logout)
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -734,6 +748,8 @@
             // Data riil dari MySQL hasil query Blade PHP
             const dbLabels = @json($dbChartLabels);
             const dbDatasets = @json($dbChartDatasets);
+            const priceSourceChartLabels = @json($priceSourceChart['labels']);
+            const priceSourceChartDatasets = @json($priceSourceChart['datasets']);
             const dashboardFilterForm = document.getElementById('dashboardFilterForm');
             const commodityFilter = document.getElementById('commodityFilter');
             const dateFilterMarker = dashboardFilterForm
@@ -851,7 +867,13 @@
             // Render Chart Utama Beranda
             const ctxPriceChart = document.getElementById('priceChart');
             if (ctxPriceChart) {
-                new Chart(ctxPriceChart.getContext('2d'), commonChartConfig);
+                new Chart(ctxPriceChart.getContext('2d'), {
+                    ...commonChartConfig,
+                    data: {
+                        labels: priceSourceChartLabels,
+                        datasets: priceSourceChartDatasets
+                    }
+                });
             }
 
             // Render Chart Monitoring Harga
@@ -1223,14 +1245,33 @@
             // Render Chart Analisis & Prediksi AI
             const ctxPrediksi = document.getElementById('chartPrediksiAnalisis');
             if (ctxPrediksi) {
+                const analysisActualPrices = @json($analysisActualPrices);
+                const analysisForecastPrices = @json($analysisForecastPrices);
+                const analysisDatasets = [];
+                if (analysisActualPrices.some(function(price) { return price !== null; })) {
+                    analysisDatasets.push({
+                        label: @json('Harga Aktual SP2KP - '.$selectedRegion),
+                        data: analysisActualPrices,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.3
+                    });
+                }
+                if (analysisForecastPrices.some(function(price) { return price !== null; })) {
+                    analysisDatasets.push({
+                        label: @json($analysisRun?->model_name ?? 'Proyeksi Model'),
+                        data: analysisForecastPrices,
+                        borderColor: '#f59e0b',
+                        borderDash: [5, 5],
+                        tension: 0.3
+                    });
+                }
+
                 new Chart(ctxPrediksi.getContext('2d'), {
                     type: 'line',
                     data: {
                         labels: @json($analysisChartLabels),
-                        datasets: [
-                            { label: 'Harga Aktual Real (Pasar Panji)', data: @json($analysisActualPrices), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.3 },
-                            { label: @json($analysisRun?->model_name ?? 'Proyeksi'), data: @json($analysisForecastPrices), borderColor: '#f59e0b', borderDash: [5, 5], tension: 0.3 }
-                        ]
+                        datasets: analysisDatasets
                     },
                     options: commonChartConfig.options
                 });

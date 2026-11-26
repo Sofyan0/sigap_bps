@@ -5,9 +5,8 @@ namespace Tests\Feature;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
 
-class BerandaDashboardTest extends TestCase
+class BerandaDashboardTest extends DashboardTestCase
 {
     use RefreshDatabase;
 
@@ -60,12 +59,14 @@ class BerandaDashboardTest extends TestCase
         }
     }
 
-    public function test_default_date_filter_uses_latest_available_prices_when_current_month_is_empty(): void
+    public function test_default_date_filter_chart_uses_source_database_prices_in_the_selected_range(): void
     {
         Carbon::setTestNow('2026-11-05 10:00:00');
-        DB::table('harga_pasar')->insert([
-            ['nama_pasar' => 'Pasar Panji', 'nama_barang' => 'Beras Medium', 'harga' => 10000, 'tanggal_dibuat' => '2026-10-01'],
-            ['nama_pasar' => 'Pasar Panji', 'nama_barang' => 'Beras Medium', 'harga' => 12000, 'tanggal_dibuat' => '2026-10-27'],
+        DB::table('monitoring_sikepo_prices')->insert([
+            ['market_name' => 'Pasar Rakyat Panji', 'commodity_name' => 'Beras Medium', 'unit' => 'kg', 'price' => 10000, 'price_date' => '2026-11-02'],
+        ]);
+        DB::table('monitoring_sp2kp_prices')->insert([
+            ['market_name' => 'Situbondo', 'commodity_name' => 'Beras Medium', 'unit' => 'kg', 'price' => 12000, 'price_date' => '2026-11-03'],
         ]);
 
         try {
@@ -74,12 +75,10 @@ class BerandaDashboardTest extends TestCase
             $response->assertOk()
                 ->assertSee('name="start_date" value="2026-11-01"', false)
                 ->assertSee('name="end_date" value="2026-11-05"', false)
-                ->assertSee('const dbLabels = ["1 Oct"', false)
-                ->assertSee('"5 Nov"]', false)
-                ->assertSee('10000')
-                ->assertSee('12000')
-                ->assertSee('Filter Terpasang: 2026-11-01 s/d 2026-11-05')
-                ->assertSee('Beras Medium (SIKEPO)');
+                ->assertSee('const priceSourceChartLabels = ["2 Nov","3 Nov"]', false)
+                ->assertSee('"label":"Beras Medium (SIKEPO)"', false)
+                ->assertSee('"label":"Beras Medium (SP2KP)"', false)
+                ->assertSee('Filter: 2026-11-01 s/d 2026-11-05');
         } finally {
             Carbon::setTestNow();
         }
@@ -87,38 +86,45 @@ class BerandaDashboardTest extends TestCase
 
     public function test_date_and_commodity_filters_are_applied_to_the_chart(): void
     {
-        DB::table('harga_pasar')->insert([
-            ['nama_pasar' => 'Pasar Panji', 'nama_barang' => 'Komoditas Pilihan', 'harga' => 10000, 'tanggal_dibuat' => '2026-10-09'],
-            ['nama_pasar' => 'Pasar Panji', 'nama_barang' => 'Komoditas Pilihan', 'harga' => 11000, 'tanggal_dibuat' => '2026-10-10'],
-            ['nama_pasar' => 'Pasar Panji', 'nama_barang' => 'Komoditas Pilihan', 'harga' => 12000, 'tanggal_dibuat' => '2026-10-20'],
-            ['nama_pasar' => 'Pasar Panji', 'nama_barang' => 'Komoditas Pilihan', 'harga' => 13000, 'tanggal_dibuat' => '2026-10-21'],
-            ['nama_pasar' => 'Pasar Panji', 'nama_barang' => 'Komoditas Lain', 'harga' => 20000, 'tanggal_dibuat' => '2026-10-15'],
+        DB::table('monitoring_sikepo_prices')->insert([
+            ['market_name' => 'Pasar Rakyat Panji', 'commodity_name' => 'Komoditas Pilihan', 'unit' => 'kg', 'price' => 11000, 'price_date' => '2026-10-10'],
+            ['market_name' => 'Pasar Rakyat Panji', 'commodity_name' => 'Komoditas Pilihan', 'unit' => 'kg', 'price' => 12000, 'price_date' => '2026-10-20'],
+            ['market_name' => 'Pasar Rakyat Panji', 'commodity_name' => 'Komoditas Pilihan', 'unit' => 'kg', 'price' => 13000, 'price_date' => '2026-10-21'],
+            ['market_name' => 'Pasar Rakyat Panji', 'commodity_name' => 'Komoditas Lain', 'unit' => 'kg', 'price' => 20000, 'price_date' => '2026-10-15'],
+        ]);
+        DB::table('monitoring_sp2kp_prices')->insert([
+            ['market_name' => 'Situbondo', 'commodity_name' => 'Komoditas Pilihan', 'unit' => 'kg', 'price' => 11500, 'price_date' => '2026-10-10'],
+            ['market_name' => 'Situbondo', 'commodity_name' => 'Komoditas Pilihan', 'unit' => 'kg', 'price' => 12500, 'price_date' => '2026-10-20'],
         ]);
 
         $response = $this->get('/?tab=beranda&start_date=2026-10-10&end_date=2026-10-20&commodity=Komoditas%20Pilihan');
 
         $response->assertOk()
-            ->assertSee('const dbLabels = ["10 Oct"', false)
-            ->assertSee('"20 Oct"]', false)
+            ->assertSee('const priceSourceChartLabels = ["10 Oct","20 Oct"]', false)
             ->assertSee('"label":"Komoditas Pilihan (SIKEPO)"', false)
-            ->assertSee('"data":[11000,11000,11000,11000,11000,11000,11000,11000,11000,11000,12000]', false)
+            ->assertSee('"label":"Komoditas Pilihan (SP2KP)"', false)
+            ->assertSee('"data":[11000,12000]', false)
+            ->assertSee('"data":[11500,12500]', false)
             ->assertDontSee('"label":"Komoditas Lain (SIKEPO)"', false);
     }
 
-    public function test_beranda_chart_carries_forward_the_last_price_when_filtered_range_has_no_update(): void
+    public function test_beranda_chart_does_not_carry_forward_prices_without_a_database_record(): void
     {
-        DB::table('harga_pasar')->insert([
-            ['nama_pasar' => 'Pasar Panji', 'nama_barang' => 'Komoditas Pilihan', 'harga' => 10000, 'tanggal_dibuat' => '2026-10-09'],
-            ['nama_pasar' => 'Pasar Panji', 'nama_barang' => 'Komoditas Lain', 'harga' => 20000, 'tanggal_dibuat' => '2026-10-09'],
+        DB::table('monitoring_sikepo_prices')->insert([
+            ['market_name' => 'Pasar Rakyat Panji', 'commodity_name' => 'Komoditas Pilihan', 'unit' => 'kg', 'price' => 10000, 'price_date' => '2026-10-10'],
+        ]);
+        DB::table('monitoring_sp2kp_prices')->insert([
+            ['market_name' => 'Situbondo', 'commodity_name' => 'Komoditas Pilihan', 'unit' => 'kg', 'price' => 12000, 'price_date' => '2026-10-12'],
         ]);
 
         $response = $this->get('/?tab=beranda&start_date=2026-10-10&end_date=2026-10-12&commodity=Komoditas%20Pilihan');
 
         $response->assertOk()
-            ->assertSee('const dbLabels = ["10 Oct","11 Oct","12 Oct"]', false)
+            ->assertSee('const priceSourceChartLabels = ["10 Oct","12 Oct"]', false)
             ->assertSee('"label":"Komoditas Pilihan (SIKEPO)"', false)
-            ->assertSee('"data":[10000,10000,10000]', false)
-            ->assertDontSee('"label":"Komoditas Lain (SIKEPO)"', false);
+            ->assertSee('"label":"Komoditas Pilihan (SP2KP)"', false)
+            ->assertSee('"data":[10000,null]', false)
+            ->assertSee('"data":[null,12000]', false);
     }
 
     public function test_sikepo_monitoring_uses_excel_prices_for_table_and_daily_chart(): void

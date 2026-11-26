@@ -67,9 +67,11 @@
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 dark:border-slate-700 pb-3 gap-2">
                             <div>
                                 <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <i class="fa-solid fa-chart-area text-blue-500"></i> Proyeksi Harga Pasar Panji (Hasil Model)
+                                    <i class="fa-solid fa-chart-area text-blue-500"></i> Analisis Harga Komoditas SP2KP
                                 </h3>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Membandingkan harga aktual MySQL dengan proyeksi model yang tersimpan</p>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Harga aktual SP2KP {{ $selectedRegion }} pada periode terpilih; proyeksi hanya ditampilkan jika tersedia dari model tersimpan.
+                                </p>
                             </div>
                             
                             <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs">
@@ -78,9 +80,15 @@
                             </div>
                         </div>
 
-                        <div class="relative h-[300px]">
-                            <canvas id="chartPrediksiAnalisis"></canvas>
-                        </div>
+                        @if($analysisChartLabels !== [])
+                            <div class="relative h-[300px]">
+                                <canvas id="chartPrediksiAnalisis"></canvas>
+                            </div>
+                        @else
+                            <div class="flex h-[300px] items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                                Belum ada harga SP2KP atau proyeksi model untuk komoditas dan periode yang dipilih.
+                            </div>
+                        @endif
                     </div>
 
                     <div class="lg:col-span-4 space-y-4">

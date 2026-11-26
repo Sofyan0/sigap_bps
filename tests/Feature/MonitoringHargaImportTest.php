@@ -7,9 +7,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Tests\TestCase;
 
-class MonitoringHargaImportTest extends TestCase
+class MonitoringHargaImportTest extends DashboardTestCase
 {
     use RefreshDatabase;
 
