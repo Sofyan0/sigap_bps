@@ -79,7 +79,7 @@
             </h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Tren {{ $sekarkijangSelectedCommodity ?? 'komoditas' }} hingga {{ \Carbon\Carbon::parse($sekarkijangComparisonEndDate)->translatedFormat('d M Y') }}.
-                Situbondo memakai data SP2KP bila tersedia; enam kabupaten/kota lain memakai data Excel aktual.
+                Situbondo memakai data SP2KP dari Monitoring Harga bila tersedia; enam wilayah lainnya diambil langsung dari SP2KP.
             </p>
         </div>
 
@@ -131,32 +131,32 @@
             {{ $message }}
         </div>
     @enderror
+    @error('sp2kp')
+        <div class="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400">
+            {{ $message }}
+        </div>
+    @enderror
 
-    <details class="rounded-xl border border-slate-200 dark:border-slate-700">
-        <summary class="cursor-pointer list-none rounded-xl bg-slate-50 px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-            <i class="fa-solid fa-file-excel mr-1.5 text-emerald-600"></i>
-            Tambah Excel / Upload Data Kabupaten-Kota
-        </summary>
-        <form method="POST" action="{{ route('sekarkijang-prices.upload') }}" enctype="multipart/form-data" class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-[1fr_2fr_auto] sm:items-end">
-            @csrf
-            <div>
-                <label for="sekarkijangRegionCode" class="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">Kabupaten / Kota</label>
-                <select id="sekarkijangRegionCode" name="region_code" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
-                    @foreach($sekarkijangUploadRegions as $region)
-                        <option value="{{ $region['code'] }}" {{ old('region_code') === $region['code'] ? 'selected' : '' }}>{{ $region['name'] }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label for="sekarkijangExcelFile" class="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">File Excel SP2KP</label>
-                <input id="sekarkijangExcelFile" name="excel_file" type="file" accept=".xlsx,.xls,.csv,.txt" required class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-emerald-500">
-                <p class="mt-1 text-[10px] text-slate-400">Mendukung format SP2KP dengan kolom komoditas, satuan, harga dan tanggal. Maksimal 10 MB.</p>
-            </div>
-            <button type="submit" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow transition hover:bg-emerald-500">
-                <i class="fa-solid fa-upload mr-1"></i> Upload Data
-            </button>
-        </form>
-    </details>
+    @if(session('warning'))
+        <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+            {{ session('warning') }}
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('sekarkijang-prices.fetch-all') }}" class="flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-emerald-900/60 dark:bg-emerald-950/20">
+        @csrf
+        <input type="hidden" name="start_date" value="{{ $sekarkijangComparisonStartDate }}">
+        <input type="hidden" name="end_date" value="{{ $sekarkijangComparisonEndDate }}">
+        @if($sekarkijangSelectedCommodity)
+            <input type="hidden" name="sekarkijang_commodity" value="{{ $sekarkijangSelectedCommodity }}">
+        @endif
+        <p class="text-[11px] text-slate-600 dark:text-slate-300">
+            Ambil harga SP2KP Kabupaten/Kota Probolinggo, Bondowoso, Banyuwangi, Jember, dan Lumajang sekaligus. Data Situbondo menggunakan tabel Monitoring Harga yang sudah ada.
+        </p>
+        <button type="submit" class="shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow transition hover:bg-emerald-500">
+            <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Ambil Data Semua Wilayah SP2KP
+        </button>
+    </form>
 
     @if(count($sekarkijangComparisonDatasets) > 0)
         <div class="overflow-x-auto">
@@ -165,11 +165,11 @@
             </div>
         </div>
         <p class="text-[11px] text-slate-500 dark:text-slate-400">
-            Situbondo menampilkan data {{ $sekarkijangSitubondoSource }}. Data wilayah lain berasal dari Excel yang tersimpan di MySQL; wilayah tanpa data akan kosong sampai file diunggah.
+            Situbondo menampilkan data {{ $sekarkijangSitubondoSource }}; data enam wilayah lainnya diambil langsung dari SP2KP.
         </p>
     @else
         <div class="flex min-h-[300px] items-center justify-center rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-            Belum ada data harga untuk komoditas ini. Unggah file Excel wilayah atau pastikan data SP2KP Situbondo tersedia.
+            Belum ada data harga untuk komoditas ini. Ambil data semua wilayah dari SP2KP atau pastikan data SP2KP Situbondo sudah tersedia di Monitoring Harga.
         </div>
     @endif
     

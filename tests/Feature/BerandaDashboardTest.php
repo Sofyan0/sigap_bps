@@ -132,7 +132,7 @@ class BerandaDashboardTest extends DashboardTestCase
         $response = $this->get('/?tab=monitoring_harga&source=sikeppo&start_date=2026-11-01&end_date=2026-11-17&date_filter_applied=1&commodity=Cabe%20Rawit%20Merah');
 
         $response->assertOk()
-            ->assertSee('Harga harian SIKEPO Pasar Rakyat Panji berdasarkan file 1-17 November 2026')
+            ->assertSee('Data SIKEPO lokal; ambil harga terbaru untuk rentang tanggal terpilih')
             ->assertSee('Rp 56.000')
             ->assertSee('17 Nov 2026')
             ->assertSee('<option value="Cabe Rawit Merah" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white" selected>', false)

@@ -19,6 +19,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/monitoring-harga/upload', [MonitoringHargaImportController::class, 'store'])->name('monitoring-harga.upload');
+    Route::post('/monitoring-harga/fetch-sikepo', [MonitoringHargaImportController::class, 'fetchSikepo'])->name('monitoring-harga.fetch-sikepo');
+    Route::post('/monitoring-harga/fetch-sp2kp', [MonitoringHargaImportController::class, 'fetchSp2kp'])->name('monitoring-harga.fetch-sp2kp');
+    Route::post('/sekarkijang/harga/fetch-all-sp2kp', [MonitoringHargaImportController::class, 'fetchSekarkijangRegions'])->name('sekarkijang-prices.fetch-all');
     Route::post('/sekarkijang/harga/upload', [MonitoringHargaImportController::class, 'storeRegion'])->name('sekarkijang-prices.upload');
     Route::post('/pengaturan', [DashboardSettingsController::class, 'update'])->name('dashboard.settings.update');
 

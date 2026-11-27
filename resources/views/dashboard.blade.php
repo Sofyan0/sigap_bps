@@ -603,7 +603,7 @@
             <!-- RIGHT CONTAINER: FILTER FORM & ADMIN PROFILE DROPDOWN -->
             <div class="flex flex-wrap items-center gap-3">
                 
-                @if(! in_array($currentTab, ['pengaturan', 'laporan', 'monitoring_pasar'], true))
+                @if(! in_array($currentTab, ['pengaturan', 'laporan', 'monitoring_pasar', 'sekarkijang'], true))
                 <!-- GLOBAL FILTER BAR -->
                 <form id="dashboardFilterForm" method="GET" action="{{ url('/') }}" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="tab" value="{{ $currentTab }}">

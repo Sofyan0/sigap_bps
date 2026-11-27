@@ -26,6 +26,7 @@ class SekarkijangDashboardTest extends DashboardTestCase
             ->assertSee('Kota Probolinggo')
             ->assertSee('Rata-rata 4 Kab. Tapal Kuda')
             ->assertSee('Provinsi Jawa Timur')
+            ->assertDontSee('id="dashboardFilterForm"', false)
             ->assertDontSee('diestimasi dari data bulanan');
     }
 
@@ -91,7 +92,7 @@ class SekarkijangDashboardTest extends DashboardTestCase
             ->assertSee('id="sekarkijangRegionComparisonChart"', false)
             ->assertSee('Kabupaten Situbondo (Pasar Panji)')
             ->assertSee('Kabupaten Banyuwangi')
-            ->assertSee('Situbondo menampilkan data Pasar Panji.')
+            ->assertSee('Situbondo menampilkan data Pasar Panji; data enam wilayah lainnya diambil langsung dari SP2KP.')
             ->assertSee('Komoditas 21')
             ->assertSee('26 Oct')
             ->assertSee('27 Oct')
@@ -107,7 +108,7 @@ class SekarkijangDashboardTest extends DashboardTestCase
         $response = $this->get('/?tab=sekarkijang&start_date=2026-01-01&end_date=2026-01-03');
 
         $response->assertOk()
-            ->assertSee('Belum ada data harga untuk komoditas ini. Unggah file Excel wilayah atau pastikan data SP2KP Situbondo tersedia.')
+            ->assertSee('Belum ada data harga untuk komoditas ini. Ambil data semua wilayah dari SP2KP atau pastikan data SP2KP Situbondo sudah tersedia di Monitoring Harga.')
             ->assertDontSee('id="sekarkijangRegionComparisonChart"', false);
     }
 }

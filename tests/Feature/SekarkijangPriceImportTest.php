@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -51,8 +52,8 @@ class SekarkijangPriceImportTest extends DashboardTestCase
             ->assertSee('labels: ["1 Nov","2 Nov","5 Nov"]', false)
             ->assertSee('"label":"Kabupaten Bondowoso","data":[12000,13000,14000]', false)
             ->assertSee('"label":"Kabupaten Jember","data":[14000,15000,16000]', false)
-            ->assertSee('Tambah Excel / Upload Data Kabupaten-Kota')
-            ->assertDontSee('dummy');
+            ->assertSee('Ambil Data Semua Wilayah SP2KP')
+            ->assertDontSee('Upload Excel Wilayah Lain');
     }
 
     public function test_region_excel_upload_rejects_an_invalid_sp2kp_format(): void
@@ -69,6 +70,110 @@ class SekarkijangPriceImportTest extends DashboardTestCase
             ->assertSessionHasErrors('excel_file');
 
         $this->assertDatabaseCount('sekarkijang_region_prices', 0);
+    }
+
+    public function test_probolinggo_county_excel_upload_is_rejected_in_favor_of_direct_sp2kp_fetch(): void
+    {
+        $this->from('/?tab=sekarkijang')
+            ->post(route('sekarkijang-prices.upload'), [
+                'region_code' => '3513',
+                'excel_file' => $this->makeExcelUpload([
+                    ['Komoditas', '2026-11-26'],
+                    ['Beras Uji', 14000],
+                ]),
+            ])
+            ->assertRedirect('/?tab=sekarkijang')
+            ->assertSessionHasErrors('region_code');
+
+        $this->assertDatabaseCount('sekarkijang_region_prices', 0);
+    }
+
+    public function test_all_six_regions_are_fetched_in_one_action_and_situbondo_reuses_monitoring_prices(): void
+    {
+        DB::table('monitoring_sp2kp_prices')->insert([
+            'market_name' => 'Situbondo',
+            'commodity_name' => 'Beras Probolinggo Test',
+            'unit' => 'kg',
+            'price' => 13500,
+            'price_date' => '2026-11-26',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $regionPrices = [
+            '3513' => ['name' => 'Kabupaten Probolinggo', 'price' => 14000, 'level' => '2', 'market_id' => ''],
+            '3574' => ['name' => 'Kota Probolinggo', 'price' => 14500, 'level' => '3', 'market_id' => '460'],
+            '3511' => ['name' => 'Kabupaten Bondowoso', 'price' => 15000, 'level' => '2', 'market_id' => ''],
+            '3510' => ['name' => 'Kabupaten Banyuwangi', 'price' => 15500, 'level' => '2', 'market_id' => ''],
+            '3509' => ['name' => 'Kabupaten Jember', 'price' => 16000, 'level' => '2', 'market_id' => ''],
+            '3508' => ['name' => 'Kabupaten Lumajang', 'price' => 16500, 'level' => '2', 'market_id' => ''],
+        ];
+        Http::fake(function ($request) use ($regionPrices) {
+            $fields = collect($request->data())->keyBy('name');
+            $regionCode = $fields->get('kode_kab_kota')['contents'] ?? '';
+            $price = $regionPrices[$regionCode]['price'] ?? 0;
+
+            return Http::response([
+                'status' => 'success',
+                'data' => [
+                    [
+                        'variant' => 'Beras Probolinggo Test',
+                        'satuan' => 'kg',
+                        'daftarHarga' => [
+                            ['date' => '2026-11-26', 'harga' => $price],
+                        ],
+                    ],
+                ],
+            ]);
+        });
+
+        $this->followingRedirects()
+            ->post(route('sekarkijang-prices.fetch-all'), [
+                'start_date' => '2026-11-26',
+                'end_date' => '2026-11-26',
+                'sekarkijang_commodity' => 'Beras Probolinggo Test',
+            ])
+            ->assertOk()
+            ->assertSee('"label":"Kabupaten Situbondo (SP2KP)","data":[13500]', false)
+            ->assertSee('"label":"Kabupaten Probolinggo","data":[14000]', false)
+            ->assertSee('"label":"Kota Probolinggo","data":[14500]', false)
+            ->assertSee('"label":"Kabupaten Bondowoso","data":[15000]', false)
+            ->assertSee('"label":"Kabupaten Banyuwangi","data":[15500]', false)
+            ->assertSee('"label":"Kabupaten Jember","data":[16000]', false)
+            ->assertSee('"label":"Kabupaten Lumajang","data":[16500]', false)
+            ->assertSee('6 data harga SP2KP berhasil diambil dari 6 wilayah.');
+
+        Http::assertSentCount(6);
+        $actualRegionParameters = Http::recorded()->map(function ($pair) {
+            $request = $pair[0];
+            $fields = collect($request->data())->keyBy('name');
+
+            return [
+                'region_code' => $fields->get('kode_kab_kota')['contents'] ?? null,
+                'url' => $request->url(),
+                'method' => $request->method(),
+                'level' => $fields->get('level')['contents'] ?? null,
+                'market_id' => $fields->get('pasar_id')['contents'] ?? null,
+            ];
+        })->keyBy('region_code')->all();
+        $expectedRegionParameters = collect($regionPrices)->map(fn ($region, $regionCode) => [
+            'region_code' => (string) $regionCode,
+            'url' => 'https://api-sp2kp.kemendag.go.id/report/api/average-price/export-area-daily-json',
+            'method' => 'POST',
+            'level' => $region['level'],
+            'market_id' => $region['market_id'],
+        ])->keyBy('region_code')->all();
+        $this->assertSame($expectedRegionParameters, $actualRegionParameters);
+
+        foreach ($regionPrices as $regionCode => $region) {
+            $this->assertDatabaseHas('sekarkijang_region_prices', [
+                'region_code' => $regionCode,
+                'region_name' => $region['name'],
+                'market_name' => $region['name'],
+                'commodity_name' => 'Beras Probolinggo Test',
+                'price' => $region['price'],
+                'price_date' => '2026-11-26',
+            ]);
+        }
     }
 
     public function test_situbondo_chart_uses_sp2kp_prices_before_the_pasarpanji_fallback(): void

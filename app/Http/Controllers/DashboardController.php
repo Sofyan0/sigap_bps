@@ -91,10 +91,8 @@ class DashboardController extends Controller
 
             $latestUploadedDate = $uploadedPriceQuery?->max('price_date');
             if ($latestUploadedDate !== null) {
-                $dashboardEndDate = \Carbon\Carbon::parse($latestUploadedDate)->toDateString();
                 $dashboardStartDate = \Carbon\Carbon::parse($latestUploadedDate)->startOfMonth()->toDateString();
                 $chartStartDate = $dashboardStartDate;
-                $chartEndDate = $dashboardEndDate;
             }
         }
 
@@ -505,10 +503,6 @@ class DashboardController extends Controller
         $sekarkijangComparisonEndDate = $chartEndDate;
         $sekarkijangComparisonLabels = [];
         $sekarkijangComparisonDatasets = [];
-        $sekarkijangUploadRegions = array_values(array_filter(
-            $iphWeeklySummary,
-            fn ($region) => ! in_array($region['code'], ['3512', '35'], true)
-        ));
         $sekarkijangSitubondoSource = 'SP2KP';
         if ($activeTab === 'sekarkijang') {
             $latestRegionalCommodity = null;
@@ -703,7 +697,7 @@ class DashboardController extends Controller
             'sekarkijangCommodityOptions', 'sekarkijangSelectedCommodity',
             'sekarkijangComparisonStartDate', 'sekarkijangComparisonEndDate',
             'sekarkijangComparisonLabels', 'sekarkijangComparisonDatasets',
-            'sekarkijangUploadRegions', 'sekarkijangSitubondoSource',
+            'sekarkijangSitubondoSource',
             'ewsMarketOptions', 'ewsCommodityOptions', 'stockAssessment', 'stockCommodityOptions',
             'reportAssessment', 'reportMetrics',
             'interventionAssessment', 'interventionCommodityOptions'

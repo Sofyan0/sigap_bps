@@ -9,7 +9,7 @@
                                 </span>
                             </h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                {{ $uploadedMonitoringRows->isNotEmpty() ? 'Menampilkan data hasil upload Excel yang tersimpan di database ' . ($dataSource === 'sp2kp' ? 'SP2KP' : 'SIKEPO') : ($dataSource === 'sp2kp' ? 'Harga harian berdasarkan laporan SP2KP Situbondo, 1-17 November 2026' : ($usingSikepoMonitoringData ? 'Harga harian SIKEPO Pasar Rakyat Panji berdasarkan file 1-17 November 2026' : 'Data terintegrasi langsung dari tabel MySQL harga_pasar Kabupaten Situbondo')) }}
+                                {{ $uploadedMonitoringRows->isNotEmpty() ? ($dataSource === 'sp2kp' ? 'Menampilkan data SP2KP yang tersimpan di database' : 'Menampilkan data SIKEPO yang tersimpan di database') : ($dataSource === 'sp2kp' ? 'Data laporan SP2KP lokal; ambil data terbaru dari Kemendag untuk rentang terpilih' : ($usingSikepoMonitoringData ? 'Data SIKEPO lokal; ambil harga terbaru untuk rentang tanggal terpilih' : 'Data terintegrasi langsung dari tabel MySQL harga_pasar Kabupaten Situbondo')) }}
                             </p>
                         </div>
 
@@ -28,28 +28,51 @@
                             {{ session('success') }}
                         </div>
                     @endif
+                    @if(session('warning'))
+                        <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                            {{ session('warning') }}
+                        </div>
+                    @endif
+                    @error('sp2kp')
+                        <div class="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400">
+                            {{ $message }}
+                        </div>
+                    @enderror
+                    @error('sikepo')
+                        <div class="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400">
+                            {{ $message }}
+                        </div>
+                    @enderror
                     @error('excel_file')
                         <div class="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400">
                             {{ $message }}
                         </div>
                     @enderror
-                    <form method="POST" action="{{ route('monitoring-harga.upload') }}" enctype="multipart/form-data" class="flex flex-col sm:flex-row sm:items-end gap-2 rounded-xl border border-slate-200 dark:border-slate-700 p-3">
-                        @csrf
-                        <input type="hidden" name="source" value="{{ $dataSource }}">
-                        <div class="flex-1">
-                            <label for="monitoringExcelFile" class="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                                Upload Excel {{ $dataSource === 'sp2kp' ? 'SP2KP' : 'SIKEPO' }}
-                            </label>
-                            <input id="monitoringExcelFile" name="excel_file" type="file" accept=".xlsx,.xls,.csv,.txt" required
-                                class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-blue-500">
-                            <p class="mt-1 text-[10px] text-slate-400">
-                                SP2KP mendukung format harian (Variant + kolom tanggal) atau laporan (Nama Barang, Unit, Harga, dan PERIODE); Quantity diabaikan.
+                    @if($dataSource === 'sp2kp')
+                        <form method="POST" action="{{ route('monitoring-harga.fetch-sp2kp') }}" class="flex flex-col sm:flex-row sm:items-end gap-2 rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                            @csrf
+                            <input type="hidden" name="start_date" value="{{ $startDate }}">
+                            <input type="hidden" name="end_date" value="{{ $endDate }}">
+                            <p class="flex-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                Ambil harga harian SP2KP untuk Situbondo sesuai rentang tanggal yang dipilih.
                             </p>
-                        </div>
-                        <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow transition hover:bg-blue-500">
-                            <i class="fa-solid fa-upload mr-1"></i> Upload &amp; Tampilkan
-                        </button>
-                    </form>
+                            <button type="submit" class="rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow transition hover:bg-amber-500">
+                                <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Ambil Data SP2KP
+                            </button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('monitoring-harga.fetch-sikepo') }}" class="flex flex-col sm:flex-row sm:items-end gap-2 rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                            @csrf
+                            <input type="hidden" name="start_date" value="{{ $startDate }}">
+                            <input type="hidden" name="end_date" value="{{ $endDate }}">
+                            <p class="flex-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                Ambil data harga SIKEPO Pasar Rakyat Panji sesuai rentang tanggal yang dipilih.
+                            </p>
+                            <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow transition hover:bg-blue-500">
+                                <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Ambil Data SIKEPO
+                            </button>
+                        </form>
+                    @endif
 
                     <div class="overflow-x-auto text-[11px] max-h-[380px] overflow-y-auto">
                         <table class="w-full text-left border-collapse">
@@ -126,7 +149,7 @@
                             <h3 class="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                                 <i class="fa-solid fa-chart-line text-blue-500"></i> Tren Grafik Pergerakan Harga Komoditas ({{ $sourceDisplayName }})
                             </h3>
-                            <span class="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-lg font-semibold">{{ $uploadedMonitoringRows->isNotEmpty() ? 'Data hasil upload database' : ($usingSpreadsheetMonitoringData ? 'Data harian 1-17 Nov 2026' : $sourceDisplayName . ' Live Data') }}</span>
+                            <span class="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-lg font-semibold">{{ $uploadedMonitoringRows->isNotEmpty() ? 'Data tersimpan di database' : ($usingSikepoMonitoringData ? 'Data harian SIKEPO Pasar Rakyat Panji' : ($usingSp2kpMonitoringData ? 'Harga harian berdasarkan laporan SP2KP Situbondo, 1-17 November 2026' : $sourceDisplayName . ' Live Data')) }}</span>
                         </div>
                         @if(empty($dbChartDatasets))
                             <div class="flex h-[360px] items-center justify-center text-center text-sm text-slate-500 dark:text-slate-400">

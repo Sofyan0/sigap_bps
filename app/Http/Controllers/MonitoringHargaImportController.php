@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as SpreadsheetDate;
@@ -19,6 +21,327 @@ class MonitoringHargaImportController extends Controller
         '3574' => 'Kota Probolinggo',
         '3508' => 'Kabupaten Lumajang',
     ];
+
+    private const SEKARKIJANG_SP2KP_LOCATIONS = [
+        '3513' => ['level' => '2', 'market_id' => ''],
+        '3574' => ['level' => '3', 'market_id' => '460'],
+        '3511' => ['level' => '2', 'market_id' => ''],
+        '3510' => ['level' => '2', 'market_id' => ''],
+        '3509' => ['level' => '2', 'market_id' => ''],
+        '3508' => ['level' => '2', 'market_id' => ''],
+    ];
+
+    public function fetchSp2kp(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date' => 'required|date_format:Y-m-d|after_or_equal:start_date',
+        ]);
+
+        $prices = $this->fetchSp2kpDailyPrices(
+            $validated['start_date'],
+            $validated['end_date'],
+            '3512',
+            '1360',
+            '3'
+        );
+        if ($prices === []) {
+            throw ValidationException::withMessages([
+                'sp2kp' => 'Tidak ditemukan data harga SP2KP Situbondo pada rentang tanggal yang dipilih.',
+            ]);
+        }
+
+        $records = array_map(fn ($price) => $price + [
+            'market_name' => 'Situbondo',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ], $prices);
+
+        DB::table('monitoring_sp2kp_prices')->upsert(
+            $records,
+            ['market_name', 'commodity_name', 'price_date'],
+            ['unit', 'price', 'updated_at']
+        );
+
+        $redirect = redirect()->route('dashboard', [
+            'tab' => 'monitoring_harga',
+            'source' => 'sp2kp',
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'date_filter_applied' => 1,
+        ]);
+        $latestReturnedDate = max(array_column($prices, 'price_date'));
+
+        if (! Carbon::parse($validated['end_date'])->isWeekend()
+            && $latestReturnedDate < $validated['end_date']) {
+            return $redirect->with(
+                'warning',
+                count($records).' data harga SP2KP berhasil diambil. Respons Kemendag saat ini hanya sampai '
+                    .Carbon::parse($latestReturnedDate)->format('d M Y')
+                    .'; tanggal akhir '.$validated['end_date'].' belum dikirim. Coba ambil kembali setelah data SP2KP diperbarui.'
+            );
+        }
+
+        return $redirect->with('success', count($records).' data harga SP2KP berhasil diambil langsung dari Kemendag.');
+    }
+
+    public function fetchSikepo(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date' => 'required|date_format:Y-m-d|after_or_equal:start_date',
+        ]);
+
+        try {
+            $response = Http::timeout(60)->get(
+                'https://sikepo.situbondokab.go.id/export-excel',
+                [
+                    'id_pasar' => '1',
+                    'tglmulai' => $validated['start_date'],
+                    'tglakhir' => $validated['end_date'],
+                ]
+            );
+        } catch (ConnectionException $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'sikepo' => 'Tidak dapat terhubung ke layanan SIKEPO. Silakan coba lagi.',
+            ]);
+        }
+
+        $contentType = strtolower(trim(explode(';', (string) $response->header('Content-Type'))[0]));
+        if (! $response->successful()
+            || ! in_array($contentType, [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel',
+                'application/octet-stream',
+            ], true)
+            || $response->body() === '') {
+            throw ValidationException::withMessages([
+                'sikepo' => 'Layanan SIKEPO tidak mengembalikan file ekspor yang valid. Pastikan tanggal yang dipilih memiliki data.',
+            ]);
+        }
+
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'sikepo-export');
+        if ($temporaryPath === false) {
+            throw ValidationException::withMessages([
+                'sikepo' => 'File ekspor SIKEPO tidak dapat diproses. Silakan coba lagi.',
+            ]);
+        }
+
+        try {
+            if (file_put_contents($temporaryPath, $response->body()) === false) {
+                throw ValidationException::withMessages([
+                    'sikepo' => 'File ekspor SIKEPO tidak dapat disimpan sementara. Silakan coba lagi.',
+                ]);
+            }
+
+            $records = $this->parseUpload(
+                $temporaryPath,
+                'sikeppo',
+                'xlsx',
+                'Pasar Rakyat Panji'
+            );
+        } finally {
+            unlink($temporaryPath);
+        }
+
+        if ($records === []) {
+            throw ValidationException::withMessages([
+                'sikepo' => 'Tidak ditemukan data harga SIKEPO pada rentang tanggal yang dipilih.',
+            ]);
+        }
+
+        DB::transaction(function () use ($records) {
+            foreach (array_chunk($records, 500) as $chunk) {
+                DB::table('monitoring_sikepo_prices')->upsert(
+                    $chunk,
+                    ['market_name', 'commodity_name', 'price_date'],
+                    ['unit', 'price', 'updated_at']
+                );
+            }
+        });
+
+        $redirect = redirect()->route('dashboard', [
+            'tab' => 'monitoring_harga',
+            'source' => 'sikeppo',
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'date_filter_applied' => 1,
+        ]);
+        $latestReturnedDate = max(array_column($records, 'price_date'));
+
+        if (! Carbon::parse($validated['end_date'])->isWeekend()
+            && $latestReturnedDate < $validated['end_date']) {
+            return $redirect->with(
+                'warning',
+                count($records).' data harga SIKEPO berhasil diambil. Respons SIKEPO saat ini hanya sampai '
+                    .Carbon::parse($latestReturnedDate)->format('d M Y')
+                    .'; tanggal akhir '.$validated['end_date'].' belum dikirim. Coba ambil kembali setelah data SIKEPO diperbarui.'
+            );
+        }
+
+        return $redirect->with('success', count($records).' data harga SIKEPO Pasar Rakyat Panji berhasil diambil.');
+    }
+
+    public function fetchSekarkijangRegions(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date' => 'required|date_format:Y-m-d|after_or_equal:start_date',
+            'sekarkijang_commodity' => 'nullable|string|max:255',
+        ]);
+
+        $records = [];
+        $regionsWithData = [];
+        $regionsWithoutData = [];
+        foreach (self::SEKARKIJANG_SP2KP_LOCATIONS as $regionCode => $location) {
+            $regionName = self::SEKARKIJANG_REGIONS[$regionCode];
+            $prices = $this->fetchSp2kpDailyPrices(
+                $validated['start_date'],
+                $validated['end_date'],
+                $regionCode,
+                $location['market_id'],
+                $location['level']
+            );
+            if ($prices === []) {
+                $regionsWithoutData[] = $regionName;
+                continue;
+            }
+
+            $regionsWithData[] = $regionName;
+            foreach ($prices as $price) {
+                $key = $regionCode.'|'.$price['commodity_name'].'|'.$price['price_date'];
+                $records[$key] = $price + [
+                    'region_code' => $regionCode,
+                    'region_name' => $regionName,
+                    'market_name' => $regionName,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        if ($records === []) {
+            throw ValidationException::withMessages([
+                'sp2kp' => 'Tidak ditemukan data harga SP2KP untuk enam wilayah pada rentang tanggal yang dipilih.',
+            ]);
+        }
+
+        DB::transaction(function () use ($records) {
+            foreach (array_chunk(array_values($records), 500) as $chunk) {
+                DB::table('sekarkijang_region_prices')->upsert(
+                    $chunk,
+                    ['region_code', 'market_name', 'commodity_name', 'price_date'],
+                    ['region_name', 'unit', 'price', 'updated_at']
+                );
+            }
+        });
+
+        $redirectParameters = [
+            'tab' => 'sekarkijang',
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'date_filter_applied' => 1,
+        ];
+        if (! empty($validated['sekarkijang_commodity'])) {
+            $redirectParameters['sekarkijang_commodity'] = $validated['sekarkijang_commodity'];
+        }
+
+        $message = count($records).' data harga SP2KP berhasil diambil dari '.count($regionsWithData).' wilayah.';
+        if ($regionsWithoutData !== []) {
+            return redirect()->route('dashboard', $redirectParameters)
+                ->with('warning', $message.' Data tidak tersedia untuk: '.implode(', ', $regionsWithoutData).'.');
+        }
+
+        return redirect()->route('dashboard', $redirectParameters)->with('success', $message);
+    }
+
+    private function fetchSp2kpDailyPrices(
+        string $startDate,
+        string $endDate,
+        string $regionCode,
+        string $marketId,
+        string $level
+    ): array {
+        try {
+            $response = Http::asMultipart()
+                ->acceptJson()
+                ->withHeaders([
+                    'Origin' => 'https://sp2kp.kemendag.go.id',
+                    'Referer' => 'https://sp2kp.kemendag.go.id/',
+                ])
+                ->timeout(60)
+                ->post('https://api-sp2kp.kemendag.go.id/report/api/average-price/export-area-daily-json', [
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'level' => $level,
+                    'variant_ids' => '',
+                    'kode_provinsi' => '35',
+                    'kode_kab_kota' => $regionCode,
+                    'pasar_id' => $marketId,
+                    'skip_sat_sun' => 'true',
+                    'tipe_komoditas' => '1',
+                ]);
+        } catch (ConnectionException $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'sp2kp' => 'Tidak dapat terhubung ke layanan SP2KP. Silakan coba lagi.',
+            ]);
+        }
+
+        $payload = $response->json();
+        if (! $response->successful() || ! is_array($payload)
+            || ($payload['status'] ?? null) !== 'success'
+            || ! is_array($payload['data'] ?? null)) {
+            throw ValidationException::withMessages([
+                'sp2kp' => 'Layanan SP2KP tidak mengembalikan data yang valid (HTTP '.$response->status().').',
+            ]);
+        }
+
+        $records = [];
+        foreach ($payload['data'] as $item) {
+            if (! is_array($item)
+                || ! is_string($item['variant'] ?? null)
+                || ! is_array($item['daftarHarga'] ?? null)) {
+                continue;
+            }
+
+            $commodity = trim($item['variant']);
+            if ($commodity === '') {
+                continue;
+            }
+
+            foreach ($item['daftarHarga'] as $dailyPrice) {
+                if (! is_array($dailyPrice)) {
+                    continue;
+                }
+
+                $date = $dailyPrice['date'] ?? null;
+                $price = $dailyPrice['harga'] ?? null;
+                if (! is_string($date)
+                    || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)
+                    || ! checkdate((int) substr($date, 5, 2), (int) substr($date, 8, 2), (int) substr($date, 0, 4))
+                    || $date < $startDate
+                    || $date > $endDate
+                    || ! is_numeric($price)
+                    || (float) $price <= 0) {
+                    continue;
+                }
+
+                $key = $commodity.'|'.$date;
+                $records[$key] = [
+                    'commodity_name' => $commodity,
+                    'unit' => is_string($item['satuan'] ?? null) ? trim($item['satuan']) : '',
+                    'price' => (float) $price,
+                    'price_date' => $date,
+                ];
+            }
+        }
+
+        return array_values($records);
+    }
 
     public function store(Request $request)
     {
@@ -66,7 +389,7 @@ class MonitoringHargaImportController extends Controller
     public function storeRegion(Request $request)
     {
         $validated = $request->validate([
-            'region_code' => 'required|in:'.implode(',', array_keys(self::SEKARKIJANG_REGIONS)),
+            'region_code' => 'required|in:'.implode(',', array_diff(array_keys(self::SEKARKIJANG_REGIONS), ['3513'])),
             'excel_file' => 'required|file|mimes:csv,txt,xls,xlsx|max:10240',
         ]);
 
